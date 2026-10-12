@@ -16,9 +16,11 @@
 
 ## 바로 써보기
 
-**https://jejunlee-jj.github.io/sem-particle-analyzer/**
+- **SEM-EDS 대시보드(팀 배포판): https://jejunlee-jj.github.io/dashboard_MICRO-DUST/**
+  - 오프라인판(HTML 파일 하나): https://jejunlee-jj.github.io/dashboard_MICRO-DUST/offline.html
+- 이 문서의 기존 단일 이미지 분석기: **https://jejunlee-jj.github.io/dashboard_MICRO-DUST/legacy/**
 
-설치도 압축 풀기도 필요 없습니다. 합성 예제 이미지가 이미 분석된 상태로 뜹니다.
+설치도 압축 풀기도 필요 없습니다. 기존 분석기는 합성 예제 이미지가 이미 분석된 상태로 뜹니다.
 
 로컬 파일로 쓰시려면 `docs/index.html`을 브라우저로 열면 됩니다. 단, **파일 네 개가
 같은 폴더에 있어야 합니다** — `index.html`, `ip.js`, `accum.js`, `example-sem.png`.
