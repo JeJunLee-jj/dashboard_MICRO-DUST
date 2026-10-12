@@ -1,0 +1,8 @@
+﻿# 입자 메타데이터 템플릿. '#' 줄은 설명이며 불러올 때 무시됩니다. 필수 열: sample_id, particle_id
+# 측정값이 없는 칸은 비워 두세요(임의 값 입력 금지). 날짜는 YYYY-MM-DD.
+# scale_bar_px: 스케일 바의 픽셀 길이 — scale_bar_value·scale_bar_unit과 함께 있어야 px→µm 보정이 됩니다.
+# morphology_class: 구형/각진 파편형/판상형/섬유상/응집체/불규칙형/형상 판별 불가 (영문 spherical/angular/platy/fibrous/agglomerate/irregular/undetermined)
+# projected_area(µm²)·equivalent_diameter(µm): 실측값이 있을 때만. 다른 단위면 size_unit 열에 nm 등 기재
+# ※ 아래 데이터 행은 형식을 보여주는 가상 예시입니다. 지우고 실제 값을 입력하세요.
+sample_id,particle_id,collection_date,collection_location,image_filename,magnification,scale_bar_value,scale_bar_unit,scale_bar_px,morphology_class,projected_area,equivalent_diameter,size_unit,classification_method,sample_type,analysis_conditions,notes
+S01,P001,2026-04-01,(예시) 채취 지점명,S01_P001.tif,10000,2,µm,105,각진 파편형,,,,육안 판정(분석자 A),측정,15 kV / WD 10 mm,

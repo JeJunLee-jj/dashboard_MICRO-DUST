@@ -1,0 +1,5 @@
+﻿# 위해성 평가 규칙 템플릿. 출처(reference_name·reference_url)와 적용 조건을 반드시 함께 기록하세요.
+# 근거 없는 임의의 안전·위험 임계값을 입력하지 마세요. 이 범주는 원소별 참고 정보로만 표시되며 입자 위해도 판정에 쓰이지 않습니다.
+# ※ 아래 데이터 행은 형식을 보여주는 가상 예시입니다. 지우고 실제 값을 입력하세요.
+element_symbol,assessment_category,reference_name,reference_year,reference_url,applicable_condition,classification_note
+Cd,IARC Group 1 (카드뮴 및 화합물),IARC Monographs Vol. 100C,2012,https://monographs.iarc.who.int/list-of-classifications/,카드뮴 및 카드뮴 화합물,사용 전 원문 확인

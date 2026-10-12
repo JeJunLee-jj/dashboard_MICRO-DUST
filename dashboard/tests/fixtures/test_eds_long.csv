@@ -1,0 +1,25 @@
+# TEST 전용 가상 데이터(실제 측정 아님) — 계산 검증용
+sample_id,particle_id,element_symbol,wt_percent,at_percent,detection_status,detection_limit,quantification_limit
+T1,P1,Fe,60,33,detected,0.1,0.3
+T1,P1,O,30,50,detected,0.1,0.3
+T1,P1,Cr,0.2,,below_loq,0.1,0.3
+T1,P1,Mn,1.5,1,detected,0.1,0.3
+T1,P1,Pb,ND,,,0.1,0.3
+T1,P1,Si,8.3,16,detected,0.1,0.3
+T1,P2,C,70,80,,,
+T1,P2,O,25,18,,,
+T1,P2,Zn,5,2,,,
+T1,P2,Pb,,,,,
+T1,P3,Si,30,,detected,,
+T1,P3,Al,15,,detected,,
+T1,P3,O,50,,detected,,
+T1,P3,Ca,5,,detected,,
+T1,P4,Fe,,20,detected,,
+T1,P4,O,,80,detected,,
+T2,P1,Fe,45,,detected,,
+T2,P1,Cu,10,,detected,,
+T2,P1,Ni,5,,detected,,
+T2,P1,O,40,,detected,,
+T9,P9,Fe,50,,detected,,
+T9,P9,O,50,,detected,,
+T9,P9,O,49,,detected,,

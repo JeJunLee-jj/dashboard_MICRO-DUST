@@ -1,0 +1,41 @@
+{
+  "name": "sem-eds-dashboard",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "SEM-EDS 기반 미세먼지 입자 분석 및 위해성 관련 원소 분포 시각화 대시보드",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -b --noEmit",
+    "generate:demo": "node scripts/generate-demo-data.mjs",
+    "build:offline": "vite build -c vite.offline.config.ts && node scripts/inline-offline.mjs",
+    "shared:set": "node scripts/set-shared-data.mjs",
+    "shared:clear": "node scripts/set-shared-data.mjs --clear"
+  },
+  "dependencies": {
+    "papaparse": "^5.7.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "recharts": "^3.10.1",
+    "utif": "^3.1.0",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@types/papaparse": "^5.5.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "jsdom": "^30.1.2",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.3"
+  }
+}

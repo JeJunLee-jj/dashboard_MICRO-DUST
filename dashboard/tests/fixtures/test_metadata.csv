@@ -1,0 +1,9 @@
+# TEST 전용 가상 데이터(실제 측정 아님) — 계산 검증용
+sample_id,particle_id,collection_date,collection_location,image_filename,magnification,scale_bar_value,scale_bar_unit,scale_bar_px,morphology_class,classification_method
+T1,P1,2026-01-01,Loc1,P1.png,10000,2,µm,100,각진 파편형,육안
+T1,P2,2026-01-01,Loc1,P2.png,10000,2,um,,구형,육안
+T1,P3,2026-01-02,Loc2,,,,,,,
+T1,P4,2026/01/02,Loc2,P4.tif,x5000,500,nm,50,fibrous,육안
+T1,P1,2026-01-01,Loc1,dup.png,,,,,구형,육안
+T2,P1,2026-01-03,Loc3,T2_P1.png,,,,,불규칙형,육안
+T2,P5,2026-01-03,Loc3,,,,,,형상 판별 불가,육안

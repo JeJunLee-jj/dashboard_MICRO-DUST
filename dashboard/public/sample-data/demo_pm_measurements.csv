@@ -1,0 +1,5 @@
+﻿# DEMO(가상) 데이터 — 실제 측정 결과가 아닙니다. scripts/generate-demo-data.mjs 로 고정 시드 생성.
+# 대시보드 화면·분석 흐름 확인용이며 어떤 실제 시료의 결과로도 사용·인용하지 마십시오.
+# PM 측정값 파일 형식 예시입니다. 값이 없으므로 대시보드는 '측정값 없음'으로 표시합니다.
+sample_id,collection_location,collection_date,pm25,pm10,unit,measurement_method,source
+DEMO-A,DEMO-지점A (가상: 역사 승강장 가정),2026-03-10,,,µg/m³,DEMO: 측정값 없음(빈칸 예시),DEMO 가상

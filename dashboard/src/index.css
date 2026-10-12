@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans KR", "IBM Plex Sans", -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-page: #f5f7f6;
+  --color-surface: #ffffff;
+  --color-surface-2: #f3f5f4;
+  --color-line: #dde3e1;
+  --color-line-2: #c8d0cd;
+  --color-ink: #131a18;
+  --color-ink-2: #4a5754;
+  --color-ink-3: #7a8784;
+
+  --color-accent: #0f6b62;
+  --color-accent-2: #0c5951;
+  --color-accent-soft: #e3f1ee;
+
+  --color-demo: #8a5a00;
+  --color-demo-soft: #fff4d6;
+
+  --color-good: #0ca30c;
+  --color-warning: #fab219;
+  --color-serious: #ec835a;
+  --color-critical: #d03b3b;
+}
+
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* DEMO 표시: 색만이 아니라 빗금 + 텍스트로 구분 */
+.demo-stripes {
+  background-image: repeating-linear-gradient(135deg, var(--color-demo-soft) 0 14px, #fde9b0 14px 28px);
+}
+
+table.data { width: 100%; border-collapse: collapse; }
+table.data th, table.data td { padding: 6px 10px; border-bottom: 1px solid var(--color-line); text-align: left; vertical-align: top; }
+table.data th { font-weight: 600; color: var(--color-ink-2); background: var(--color-surface-2); position: sticky; top: 0; z-index: 1; font-size: 12.5px; }
+table.data td.num, table.data th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: 12.5px; }
+table.data tbody tr:hover { background: #f7faf9; }
+
+.recharts-wrapper text { font-family: var(--font-sans); }
+.recharts-cartesian-axis-tick-value { fill: #5f6b68; font-size: 12px; }
+.recharts-tooltip-wrapper { outline: none; }
+
+@media print {
+  .no-print { display: none !important; }
+}

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FeiImage xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.phenom-world.com/Schemas/FeiImage1.xsd">
+  <databarHeight>75</databarHeight>
+  <databarFields>4091</databarFields>
+  <databarLabel>261008_Local</databarLabel>
+  <displayWidth>0.5179999999999999</displayWidth>
+  <pixelWidth unit="nm">13.4896</pixelWidth>
+  <pixelHeight unit="nm">13.4896</pixelHeight>
+  <time>2026-10-08T09:28:13</time>
+  <currentUser/>
+  <integrations>32</integrations>
+  <cropHint>
+    <left>1</left>
+    <top>0</top>
+    <right>1918</right>
+    <bottom>1200</bottom>
+  </cropHint>
+  <samplePosition>
+    <x>0.00214843</x>
+    <y>0.00247037</y>
+  </samplePosition>
+  <multiStage>
+    <sampleRadius unit="m">0</sampleRadius>
+    <sampleHeight unit="m">0</sampleHeight>
+  </multiStage>
+  <appliedContrast>1.08127</appliedContrast>
+  <appliedBrightness>0.446723</appliedBrightness>
+  <appliedGamma>1</appliedGamma>
+  <displayBlackLevel>0</displayBlackLevel>
+  <displayWhiteLevel>1</displayWhiteLevel>
+  <samplePressureEstimate>1</samplePressureEstimate>
+  <acquisition>
+    <scan>
+      <scanHW>ZYNQ</scanHW>
+      <acqHW>ZYNQ</acqHW>
+      <dwellTime unit="ns">200</dwellTime>
+      <spotSize>4.3</spotSize>
+      <spotPresetName>Point</spotPresetName>
+      <rotation>0</rotation>
+      <interlace>1</interlace>
+      <detector>sed</detector>
+      <detectorMixFactors>
+        <bsdA>0</bsdA>
+        <bsdB>0</bsdB>
+        <bsdC>0</bsdC>
+        <bsdD>0</bsdD>
+        <sed>0</sed>
+        <stem>0</stem>
+      </detectorMixFactors>
+      <detectors>
+        <QBSD A="0" B="0" C="0" D="0">
+          <gain>42</gain>
+          <offset>-1.31473</offset>
+          <mixFactor>0</mixFactor>
+        </QBSD>
+        <SED>
+          <gain>0.486359</gain>
+          <offset>2.587</offset>
+          <scintillatorVoltage>5017.09</scintillatorVoltage>
+          <mixFactor>1</mixFactor>
+        </SED>
+        <STEM>
+          <mixFactor>0</mixFactor>
+          <segmentSelection>
+            <bf1>false</bf1>
+            <bf2>false</bf2>
+            <bf3>false</bf3>
+            <bf4>false</bf4>
+            <df1>false</df1>
+            <ha1>false</ha1>
+            <ha2>false</ha2>
+            <ha3>false</ha3>
+            <ha4>false</ha4>
+            <ha5>false</ha5>
+            <ha6>false</ha6>
+          </segmentSelection>
+        </STEM>
+      </detectors>
+      <beamShift>
+        <x>-2.15701e-05</x>
+        <y>1.03707e-05</y>
+      </beamShift>
+      <sourceTilt>
+        <x>-0.1014660000801086</x>
+        <y>0.004922070074826479</y>
+      </sourceTilt>
+      <stigmator>
+        <x>-0.002384830033406615</x>
+        <y>-0.01486869994550943</y>
+      </stigmator>
+      <sourceTime unit="h">220</sourceTime>
+      <sourceId>9110</sourceId>
+      <highVoltage unit="kV">-10</highVoltage>
+      <emissionCurrent unit="uA">40.3</emissionCurrent>
+      <emissionCurrentPresetName>Nominal</emissionCurrentPresetName>
+      <filamentPower unit="W">4.456</filamentPower>
+      <scanCenter>
+        <x>0</x>
+        <y>0</y>
+      </scanCenter>
+      <scanScale>1</scanScale>
+    </scan>
+  </acquisition>
+  <workingDistance unit="mm">7.66387</workingDistance>
+  <instrument>
+    <type>Phenom</type>
+    <softwareVersion>6.7.1.rel.cc641df71d.27825</softwareVersion>
+    <uniqueID>MVE099157-60655-S</uniqueID>
+    <edition>G6 Phenom Pure2019</edition>
+    <sampleHolder>
+      <type>1</type>
+      <id>011aaa4b1f000046</id>
+    </sampleHolder>
+  </instrument>
+  <applicationID>Phenom User Interface 1.10.6-rel</applicationID>
+  <PPI>
+    <version>1.22.0_release</version>
+  </PPI>
+</FeiImage>

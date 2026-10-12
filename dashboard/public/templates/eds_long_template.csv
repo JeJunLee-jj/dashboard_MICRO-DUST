@@ -1,0 +1,11 @@
+﻿# EDS 원소 조성(긴 형식) 템플릿 — 한 행 = 한 입자의 한 원소. 필수 열: sample_id, particle_id, element_symbol, wt_percent 또는 at_percent
+# wt_percent(중량%)와 at_percent(원자%)는 따로 기재하며 서로 환산해 채우지 마세요. 없는 값은 비워 둡니다.
+# detection_status: detected / below_loq / below_lod / not_detected (비우면 값으로 추정: >0 검출, 0 미검출, 빈칸 결측)
+# 값 칸에 ND, <LOD, <LOQ, <0.1 처럼 적어도 인식합니다. detection_limit·quantification_limit 은 wt% 단위로 가정합니다.
+# normalized: 원자료가 100%로 정규화된 값이면 Y, 아니면 N
+# ※ 아래 데이터 행은 형식을 보여주는 가상 예시입니다. 지우고 실제 값을 입력하세요.
+sample_id,particle_id,element_symbol,element_name,wt_percent,at_percent,detection_status,detection_limit,quantification_limit,measurement_method,normalized
+S01,P001,Fe,철,52.3,28.1,detected,0.1,0.3,표준없는 정량(ZAF),Y
+S01,P001,O,산소,30.2,56.6,detected,0.1,0.3,표준없는 정량(ZAF),Y
+S01,P001,Cr,크롬,0.2,,below_loq,0.1,0.3,표준없는 정량(ZAF),Y
+S01,P001,Pb,납,ND,,not_detected,0.1,0.3,표준없는 정량(ZAF),Y

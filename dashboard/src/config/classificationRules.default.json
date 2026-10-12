@@ -1,0 +1,177 @@
+{
+  "version": "1.0",
+  "description": "입자 유형(조성 기반) 분류와 발생원 후보 탐색 규칙. 모든 임계값은 wt% 기준이며, normalization이 'setting'이면 분석 설정의 정규화 기준(금속기준: C·O 제외 재정규화 / 전체기준)을 따른다. 대시보드 '분석 설정' 화면에서 수정하거나 이 파일을 내보내 편집 후 다시 불러올 수 있다.",
+  "thresholdProvenance": "입자 유형 임계값은 기존 sem-particle-analyzer 프로토타입의 조성 규칙 v2 기본값(합성 데이터 점검으로 정한 값)을 옮긴 것이다. 실측 시료로 재보정해야 한다.",
+  "particleTypes": [
+    {
+      "id": "carbonaceous",
+      "label": "탄소질",
+      "normalization": "total",
+      "all": [{ "kind": "min", "element": "C", "value": 55 }],
+      "note": "C ≥ 55 wt% (전체기준). 탄소 코팅·탄소 테이프 기판 신호와 구분되지 않으면 해석 주의."
+    },
+    {
+      "id": "fe_rich",
+      "label": "Fe-rich",
+      "normalization": "setting",
+      "all": [
+        { "kind": "min", "element": "Fe", "value": 40 },
+        { "kind": "sumMax", "elements": ["Si", "Al"], "value": 30 }
+      ],
+      "note": "Fe ≥ 40 wt% 그리고 Si+Al < 30 wt%"
+    },
+    {
+      "id": "ti_rich",
+      "label": "Ti-rich",
+      "normalization": "setting",
+      "all": [{ "kind": "min", "element": "Ti", "value": 40 }],
+      "note": "Ti ≥ 40 wt%"
+    },
+    {
+      "id": "aluminosilicate",
+      "label": "알루미노실리케이트",
+      "normalization": "setting",
+      "all": [
+        { "kind": "sumMin", "elements": ["Si", "Al"], "value": 50 },
+        { "kind": "ratioBetween", "numerator": "Al", "denominator": "Si", "min": 0.15, "max": 1.2 }
+      ],
+      "note": "Si+Al ≥ 50 wt% 그리고 0.15 ≤ Al/Si ≤ 1.2"
+    },
+    {
+      "id": "ca_rich",
+      "label": "Ca-rich",
+      "normalization": "setting",
+      "all": [{ "kind": "min", "element": "Ca", "value": 40 }],
+      "note": "Ca ≥ 40 wt%"
+    },
+    {
+      "id": "fe_mineral_mix",
+      "label": "Fe-광물 혼합",
+      "normalization": "setting",
+      "all": [
+        { "kind": "min", "element": "Fe", "value": 20 },
+        { "kind": "sumMin", "elements": ["Si", "Al"], "value": 25 }
+      ],
+      "note": "Fe ≥ 20 wt% 그리고 Si+Al ≥ 25 wt%"
+    }
+  ],
+  "sourceCandidates": [
+    {
+      "id": "rail_wear",
+      "candidate": "철도·차량 마찰·마모 관련 입자",
+      "enabled": true,
+      "normalization": "setting",
+      "all": [
+        { "kind": "min", "element": "Fe", "value": 40 },
+        { "kind": "sumMax", "elements": ["Si", "Al"], "value": 30 }
+      ],
+      "supporting": [
+        { "kind": "anyDetected", "elements": ["Mn", "Cr", "Cu", "Ni"], "label": "Mn·Cr·Cu·Ni 중 동시 검출" }
+      ],
+      "morphologySupport": ["angular", "platy"],
+      "features": "Fe 우세(≥ 40 wt%) · Si+Al 낮음(< 30 wt%). 보조: 합금·제동재 관련 원소(Mn·Cr·Cu·Ni) 동시 검출, 각진 파편형·판상형 형상.",
+      "thresholdBasis": "기존 프로토타입 규칙 v2의 Fe-rich 기본값(합성 데이터 기반). 실측 재보정 필요.",
+      "alternatives": ["토양·광물 유래 철산화물", "도로 재비산 먼지 중 금속 입자", "금속 가공·용접 등 산업 활동", "도로 차량 브레이크 마모"],
+      "requiredValidation": ["역사 외부(배경) 시료와의 비교", "레일·차륜·제동재의 기준 스펙트럼", "입자 크기 분포", "열차 운행·제동 구간 등 현장 기록"]
+    },
+    {
+      "id": "soil_aluminosilicate",
+      "candidate": "토양 및 광물성 먼지",
+      "enabled": true,
+      "normalization": "setting",
+      "all": [
+        { "kind": "sumMin", "elements": ["Si", "Al"], "value": 50 },
+        { "kind": "ratioBetween", "numerator": "Al", "denominator": "Si", "min": 0.15, "max": 1.2 }
+      ],
+      "supporting": [
+        { "kind": "anyDetected", "elements": ["K", "Mg", "Na"], "label": "K·Mg·Na 중 동시 검출(장석·점토 광물 구성 원소)" }
+      ],
+      "morphologySupport": ["irregular", "angular", "platy"],
+      "features": "Si+Al ≥ 50 wt%, Al/Si 0.15–1.2(알루미노실리케이트). 보조: K·Mg·Na 동시 검출, 불규칙·각진·판상 형상.",
+      "thresholdBasis": "기존 프로토타입 규칙 v2의 알루미노실리케이트 기본값(합성 데이터 기반). 실측 재보정 필요.",
+      "alternatives": ["도로 재비산 먼지", "건설·공사 먼지", "외부 대기에서 유입된 광물 입자"],
+      "requiredValidation": ["역사 외부(배경) 시료와의 비교", "주변 토양·도로 먼지 기준 스펙트럼"]
+    },
+    {
+      "id": "calcium_mineral",
+      "candidate": "토양 및 광물성 먼지 (Ca 우세)",
+      "enabled": true,
+      "normalization": "setting",
+      "all": [{ "kind": "min", "element": "Ca", "value": 40 }],
+      "supporting": [{ "kind": "anyDetected", "elements": ["S", "Mg"], "label": "S 또는 Mg 동시 검출(석고·백운석 가능성)" }],
+      "morphologySupport": ["angular", "irregular"],
+      "features": "Ca ≥ 40 wt%. 보조: S·Mg 동시 검출.",
+      "thresholdBasis": "기존 프로토타입 규칙 v2의 Ca-rich 기본값(합성 데이터 기반). 실측 재보정 필요.",
+      "alternatives": ["건설·시멘트·콘크리트 먼지", "도로 재비산 먼지", "제설제 등 기타 기원"],
+      "requiredValidation": ["역사 내 시설(콘크리트 구조물) 기준 스펙트럼", "배경 시료 비교"]
+    },
+    {
+      "id": "road_resuspension",
+      "candidate": "도로 재비산 먼지",
+      "enabled": true,
+      "normalization": "setting",
+      "all": [
+        { "kind": "min", "element": "Fe", "value": 20 },
+        { "kind": "sumMin", "elements": ["Si", "Al"], "value": 25 }
+      ],
+      "supporting": [],
+      "morphologySupport": ["agglomerate", "irregular"],
+      "features": "Fe ≥ 20 wt% 그리고 Si+Al ≥ 25 wt%(금속-광물 혼합 조성). 보조: 응집체·불규칙 형상.",
+      "thresholdBasis": "기존 프로토타입 규칙 v2의 Fe-광물 혼합 기본값(합성 데이터 기반). 혼합 조성은 여러 기원의 응집으로도 생기므로 단독 근거로 쓰지 말 것.",
+      "alternatives": ["마모 입자와 광물 입자의 응집", "토양 유래 철 함유 광물", "외부 대기 유입"],
+      "requiredValidation": ["도로 먼지 기준 스펙트럼", "배경 시료 비교", "개별 입자의 원소 맵(혼합 vs 응집 구분)"]
+    },
+    {
+      "id": "carbonaceous",
+      "candidate": "유기물 또는 탄소성 입자",
+      "enabled": true,
+      "normalization": "total",
+      "all": [{ "kind": "min", "element": "C", "value": 55 }],
+      "supporting": [],
+      "morphologySupport": ["spherical", "agglomerate"],
+      "features": "C ≥ 55 wt%(전체기준). 보조: 구형·응집체 형상.",
+      "thresholdBasis": "기존 프로토타입 규칙 v2의 탄소질 기본값(합성 데이터 기반). 탄소 코팅·탄소 테이프 신호 영향을 배제해야 함.",
+      "alternatives": ["탄소 코팅·탄소 테이프 등 시료 준비 유래 신호", "디젤 배출 검댕", "타이어 마모 입자", "생물 기원 입자(꽃가루·포자)"],
+      "requiredValidation": ["코팅·기판 블랭크 스펙트럼", "사슬형 응집 등 형상 확인", "OC/EC 분석"]
+    },
+    {
+      "id": "industrial_ti",
+      "candidate": "금속 가공 및 기타 산업 활동 관련 입자 (Ti 우세)",
+      "enabled": true,
+      "normalization": "setting",
+      "all": [{ "kind": "min", "element": "Ti", "value": 40 }],
+      "supporting": [],
+      "morphologySupport": [],
+      "features": "Ti ≥ 40 wt%.",
+      "thresholdBasis": "기존 프로토타입 규칙 v2의 Ti-rich 기본값(합성 데이터 기반).",
+      "alternatives": ["티타늄 광물(루틸·일메나이트 등)", "도료 안료(TiO₂)", "마찰재 첨가물"],
+      "requiredValidation": ["주변 도장면·마찰재 기준 스펙트럼", "배경 시료 비교"]
+    },
+    {
+      "id": "nonferrous_metal",
+      "candidate": "금속 가공 및 기타 산업 활동 관련 입자 (비철 금속)",
+      "enabled": true,
+      "normalization": "setting",
+      "all": [{ "kind": "sumMin", "elements": ["Cu", "Zn", "Ni", "Cr", "Pb", "Sn"], "value": 10 }],
+      "supporting": [],
+      "morphologySupport": [],
+      "features": "Cu+Zn+Ni+Cr+Pb+Sn ≥ 10 wt%.",
+      "thresholdBasis": "근거 문헌이 없는 탐색용 기본값입니다. 반드시 사용자가 검토·수정해야 합니다.",
+      "alternatives": ["철도 집전장치(팬터그래프·가선) 마모", "제동재 중 Cu·Zn", "타이어 마모(Zn)", "금속 가공·도금 등 산업 활동"],
+      "requiredValidation": ["집전장치·제동재 기준 스펙트럼", "배경 시료 비교", "주변 산업 시설 정보"]
+    },
+    {
+      "id": "external_inflow",
+      "candidate": "외부 대기 유입 입자",
+      "enabled": true,
+      "normalization": "setting",
+      "all": [{ "kind": "requiresBackground" }],
+      "supporting": [],
+      "morphologySupport": [],
+      "features": "개별 입자의 조성·형상만으로는 판별할 수 없음. 역사 외부(배경) 시료와 실내 시료의 입자 유형 분포를 비교해야 함.",
+      "thresholdBasis": "해당 없음",
+      "alternatives": [],
+      "requiredValidation": ["동시간대 역사 외부(배경) 시료", "외기 PM 농도·기상 자료", "환기 설비 운전 기록"]
+    }
+  ]
+}
