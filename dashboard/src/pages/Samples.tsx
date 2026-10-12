@@ -9,7 +9,7 @@ import { Card, Formula, Legend, Notice, PageHeader, Pct, Segmented } from "../co
 import { axisProps, gridProps, pctTick, tip } from "../components/chartKit";
 import { compareGroupsBy, type GroupField, type GroupRow } from "../lib/samples";
 import { MORPHOLOGY_CLASSES, morphologyLabel } from "../lib/morphology";
-import { OTHER_COLOR, SERIES, seqColor } from "../lib/palette";
+import { OTHER_COLOR, SERIES, seqColor, INK_BAR } from "../lib/palette";
 
 export function SamplesPage() {
   const { particles, filtered, settings, rules, data, setFilters, navigate } = useStore();
@@ -20,7 +20,7 @@ export function SamplesPage() {
   if (!particles.length) return (<><PageHeader title="시료 및 채취 지점 비교" /><NoData /></>);
   const rows = cmp.rows;
   const hasBackground = rows.some((r) => /배경|background|외기|외부/i.test(r.sampleType ?? ""));
-  const typeColor = (t: string, i: number) => (t === "기타/미분류" ? OTHER_COLOR : t.startsWith("분류 불가") ? "#d5dad8" : SERIES[i] ?? OTHER_COLOR);
+  const typeColor = (t: string, i: number) => (t === "기타/미분류" ? OTHER_COLOR : t.startsWith("분류 불가") ? "#d9d5cc" : SERIES[i] ?? OTHER_COLOR);
   const typeData = rows.map((r) => {
     const o: Record<string, number | string> = { group: r.group, n: r.valid };
     for (const t of typeLabels) { o[t] = r.types[t] ?? 0; o[`${t}%`] = r.valid ? ((r.types[t] ?? 0) / r.valid) * 100 : 0; }
@@ -48,39 +48,39 @@ export function SamplesPage() {
               {rows.map((r) => (
                 <tr key={r.group} className="cursor-pointer" onClick={() => { setFilters((f) => (field === "sample_id" ? { ...f, samples: [r.group] } : { ...f, locations: [r.group] })); navigate({ page: "overview" }); }}>
                   <td className="font-medium text-accent">{r.group}</td>
-                  <td className="text-[12px]">{field === "sample_id" ? r.location ?? "—" : [...new Set(filtered.filter((p) => (p.location ?? "(위치 미기재)") === r.group).map((p) => p.sample_id))].join(", ")}</td>
-                  <td className="tnum text-[12px]">{r.dates.join(", ") || "—"}</td>
-                  <td className="text-[12px]">{r.sampleType ?? "—"}</td>
+                  <td className="text-[13px]">{field === "sample_id" ? r.location ?? "—" : [...new Set(filtered.filter((p) => (p.location ?? "(위치 미기재)") === r.group).map((p) => p.sample_id))].join(", ")}</td>
+                  <td className="tnum text-[13px]">{r.dates.join(", ") || "—"}</td>
+                  <td className="text-[13px]">{r.sampleType ?? "—"}</td>
                   <td className="num">{r.particles}</td><td className="num">{r.valid}</td>
                   <td className="num"><Pct k={r.positive} n={r.determinable} /></td>
                   <td className="num">{r.ci ? `${(r.ci.lo * 100).toFixed(1)}–${(r.ci.hi * 100).toFixed(1)}%` : "—"}</td>
-                  <td className="text-[12px]">{r.pm.filter((x) => x.pm25 != null || x.pm10 != null).map((x) => `PM2.5 ${x.pm25 ?? "—"} / PM10 ${x.pm10 ?? "—"} ${x.unit ?? "단위 미상"}`).join("; ") || "없음"}</td>
+                  <td className="text-[13px]">{r.pm.filter((x) => x.pm25 != null || x.pm10 != null).map((x) => `PM2.5 ${x.pm25 ?? "—"} / PM10 ${x.pm10 ?? "—"} ${x.unit ?? "단위 미상"}`).join("; ") || "없음"}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <p className="text-[12px] text-ink-3 mt-2">행을 누르면 그 그룹만 필터한 종합 대시보드로 이동합니다. PM 값은 업로드한 측정값을 그대로 보여주며 입자 분석 결과와 합산·환산하지 않습니다.</p>
+        <p className="text-[13px] text-ink-3 mt-2">행을 누르면 그 그룹만 필터한 종합 대시보드로 이동합니다. PM 값은 업로드한 측정값을 그대로 보여주며 입자 분석 결과와 합산·환산하지 않습니다.</p>
       </Card>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-4">
         <ChartCard title="그룹별 대상 원소 검출 입자 비율" subtitle="판정 가능 입자 기준 · 오차막대 95% Wilson CI"
           table={<table className="data"><thead><tr><th>그룹</th><th className="num">검출/판정 가능</th></tr></thead><tbody>{rows.map((r) => <tr key={r.group}><td>{r.group}</td><td className="num">{r.positive}/{r.determinable}</td></tr>)}</tbody></table>}>
           <div className="h-[260px]">
             <ResponsiveContainer>
               <BarChart data={rows.map((r) => ({ ...r, pct: (r.ratio ?? 0) * 100, err: r.ci ? [((r.ratio ?? 0) - r.ci.lo) * 100, (r.ci.hi - (r.ratio ?? 0)) * 100] : [0, 0] }))} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
                 <CartesianGrid {...gridProps} />
-                <XAxis dataKey="group" {...axisProps} interval={0} tick={{ fontSize: 11, fill: "#5f6b68" }} />
+                <XAxis dataKey="group" {...axisProps} interval={0} tick={{ fontSize: 11, fill: "#4a4945" }} />
                 <YAxis {...axisProps} domain={[0, 100]} tickFormatter={pctTick} width={42} />
-                <Tooltip cursor={{ fill: "#eef3f1" }} content={tip<GroupRow & { pct: number }>((d) => ({ title: d.group, lines: [`${d.positive}/${d.determinable} 입자`, d.ci ? `${d.pct.toFixed(1)}% (95% CI ${(d.ci.lo * 100).toFixed(1)}–${(d.ci.hi * 100).toFixed(1)}%)` : "판정 가능 입자 없음"] }))} />
-                <Bar dataKey="pct" fill={SERIES[0]} radius={[4, 4, 0, 0]} barSize={30} isAnimationActive={false}><ErrorBar dataKey="err" stroke="#5f6b68" width={5} /></Bar>
+                <Tooltip cursor={{ fill: "#ebe7de" }} content={tip<GroupRow & { pct: number }>((d) => ({ title: d.group, lines: [`${d.positive}/${d.determinable} 입자`, d.ci ? `${d.pct.toFixed(1)}% (95% CI ${(d.ci.lo * 100).toFixed(1)}–${(d.ci.hi * 100).toFixed(1)}%)` : "판정 가능 입자 없음"] }))} />
+                <Bar dataKey="pct" fill={INK_BAR} radius={[4, 4, 0, 0]} barSize={30} isAnimationActive={false}><ErrorBar dataKey="err" stroke="#4a4945" width={5} /></Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
         </ChartCard>
 
         <Card title="그룹 간 비교 (대상 원소 검출 입자 비율)" subtitle="Fisher 정확검정 · Holm 보정">
-          {cmp.pairwise.length === 0 ? <p className="text-[13px] text-ink-2">비교할 수 있는 그룹 쌍이 없습니다(각 그룹 판정 가능 입자 3개 이상 필요).</p> : (
+          {cmp.pairwise.length === 0 ? <p className="text-[14px] text-ink-2">비교할 수 있는 그룹 쌍이 없습니다(각 그룹 판정 가능 입자 3개 이상 필요).</p> : (
             <table className="data">
               <thead><tr><th>그룹 A</th><th>그룹 B</th><th className="num">A 비율</th><th className="num">B 비율</th><th className="num">p</th><th className="num">Holm 보정 p</th><th>판단</th></tr></thead>
               <tbody>{cmp.pairwise.map((x) => {
@@ -90,17 +90,17 @@ export function SamplesPage() {
                     <td>{x.a}</td><td>{x.b}</td>
                     <td className="num">{((A.ratio ?? 0) * 100).toFixed(1)}%</td><td className="num">{((B.ratio ?? 0) * 100).toFixed(1)}%</td>
                     <td className="num">{x.p.toPrecision(2)}</td><td className="num">{x.pAdj.toPrecision(2)}</td>
-                    <td className="text-[12px]">{x.pAdj < 0.05 ? "보정 후 p < 0.05" : "차이 확인 안 됨"}</td>
+                    <td className="text-[13px]">{x.pAdj < 0.05 ? "보정 후 p < 0.05" : "차이 확인 안 됨"}</td>
                   </tr>
                 );
               })}</tbody>
             </table>
           )}
-          <p className="text-[12px] text-ink-3 mt-2">'차이 확인 안 됨'은 차이가 없다는 뜻이 아니라 현재 표본으로 차이를 확인할 수 없다는 뜻입니다.</p>
+          <p className="text-[13px] text-ink-3 mt-2">'차이 확인 안 됨'은 차이가 없다는 뜻이 아니라 현재 표본으로 차이를 확인할 수 없다는 뜻입니다.</p>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-4">
         <ChartCard title="그룹 × 대상 원소 검출 빈도" subtitle="칸 = 검출 입자 / 판정 가능 입자 비율(%)">
           <Heatmap rows={rows.map((r) => ({ key: r.group, label: `${r.group} (n=${r.valid})` }))} cols={settings.targetElements.map((e) => ({ key: e, label: e }))} rowLabelW={150} cellW={44}
             cell={(g, e) => {
@@ -120,8 +120,8 @@ export function SamplesPage() {
               <BarChart data={typeData} layout="vertical" margin={{ left: 8, right: 16, top: 4, bottom: 4 }}>
                 <CartesianGrid {...gridProps} horizontal={false} vertical />
                 <XAxis type="number" domain={[0, 100]} allowDataOverflow ticks={[0, 25, 50, 75, 100]} {...axisProps} tickFormatter={(v) => `${v}%`} />
-                <YAxis type="category" dataKey="group" {...axisProps} width={110} tick={{ fontSize: 11, fill: "#5f6b68" }} />
-                <Tooltip cursor={{ fill: "#eef3f1" }} content={tip<Record<string, number | string>>((d) => ({ title: `${d.group} (유효 ${d.n})`, lines: typeLabels.filter((t) => (d[t] as number) > 0).map((t) => `${t}: ${d[t]}개 (${(d[`${t}%`] as number).toFixed(0)}%)`) }))} />
+                <YAxis type="category" dataKey="group" {...axisProps} width={110} tick={{ fontSize: 11, fill: "#4a4945" }} />
+                <Tooltip cursor={{ fill: "#ebe7de" }} content={tip<Record<string, number | string>>((d) => ({ title: `${d.group} (유효 ${d.n})`, lines: typeLabels.filter((t) => (d[t] as number) > 0).map((t) => `${t}: ${d[t]}개 (${(d[`${t}%`] as number).toFixed(0)}%)`) }))} />
                 {typeLabels.map((t, i) => <Bar key={t} dataKey={`${t}%`} stackId="a" fill={typeColor(t, i)} stroke="#fff" strokeWidth={1} barSize={18} isAnimationActive={false} />)}
               </BarChart>
             </ResponsiveContainer>

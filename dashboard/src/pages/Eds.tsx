@@ -11,7 +11,7 @@ import { cooccurrence, correlationMatrix, elementSummaries, elementsInData } fro
 import { elementStatus } from "../lib/join";
 import { particleTargetResult } from "../lib/hazard";
 import { compositionStack, OTHER_KEY } from "../lib/viewModels";
-import { divColor, elementColor, OTHER_COLOR, SERIES, seqColor } from "../lib/palette";
+import { divColor, elementColor, OTHER_COLOR, SERIES, seqColor, INK_BAR } from "../lib/palette";
 import { elementNameKo } from "../lib/elements";
 import type { Basis, Particle } from "../lib/types";
 
@@ -65,7 +65,7 @@ export function EdsPage() {
                 const d = basis === "wt" ? s.wt : s.at;
                 return (
                   <tr key={s.symbol}>
-                    <td><b>{s.symbol}</b> <span className="text-[11.5px] text-ink-3">{elementNameKo(s.symbol)}</span>{settings.targetElements.includes(s.symbol) && <span className="ml-1 text-[10.5px] border border-line-2 rounded px-1 text-ink-2">대상</span>}</td>
+                    <td><b>{s.symbol}</b> <span className="text-[12.5px] text-ink-3">{elementNameKo(s.symbol)}</span>{settings.targetElements.includes(s.symbol) && <span className="ml-1 text-[11.5px] border border-line-2 rounded px-1 text-ink-2">대상</span>}</td>
                     <td className="num"><Pct k={s.detected} n={s.evaluable} /></td>
                     <td className="num">{d.n}</td>
                     <td className="num">{fmtNum(d.mean)}</td>
@@ -85,7 +85,7 @@ export function EdsPage() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-4">
         <ChartCard title="원소별 검출 빈도" subtitle="검출 입자 / 판정 가능 입자 · 상위 20개 원소 · 출처: EDS 성분표"
           table={<table className="data"><thead><tr><th>원소</th><th className="num">검출/판정 가능</th></tr></thead><tbody>{byFreq.map((s) => <tr key={s.symbol}><td>{s.symbol}</td><td className="num">{s.detected}/{s.evaluable}</td></tr>)}</tbody></table>}>
           <div className="h-[260px]">
@@ -94,8 +94,8 @@ export function EdsPage() {
                 <CartesianGrid {...gridProps} />
                 <XAxis dataKey="symbol" {...axisProps} interval={0} />
                 <YAxis {...axisProps} domain={[0, 100]} tickFormatter={pctTick} width={42} />
-                <Tooltip cursor={{ fill: "#eef3f1" }} content={tip<{ symbol: string; detected: number; evaluable: number; pct: number }>((d) => ({ title: `${d.symbol} (${elementNameKo(d.symbol)})`, lines: [`검출 ${d.detected} / 판정 가능 ${d.evaluable}`, `${d.pct.toFixed(1)}%`] }))} />
-                <Bar dataKey="pct" fill={SERIES[0]} radius={[4, 4, 0, 0]} barSize={16} isAnimationActive={false} />
+                <Tooltip cursor={{ fill: "#ebe7de" }} content={tip<{ symbol: string; detected: number; evaluable: number; pct: number }>((d) => ({ title: `${d.symbol} (${elementNameKo(d.symbol)})`, lines: [`검출 ${d.detected} / 판정 가능 ${d.evaluable}`, `${d.pct.toFixed(1)}%`] }))} />
+                <Bar dataKey="pct" fill={INK_BAR} radius={[4, 4, 0, 0]} barSize={16} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -112,9 +112,9 @@ export function EdsPage() {
         <div className="overflow-x-auto mt-2">
           <BarChart width={Math.max(900, stack.length * 22 + 80)} height={300} data={stack} margin={{ left: 0, right: 8, top: 8, bottom: 40 }}>
             <CartesianGrid {...gridProps} />
-            <XAxis dataKey="label" {...axisProps} angle={-60} textAnchor="end" interval={0} height={60} tick={{ fontSize: 10, fill: "#5f6b68" }} />
+            <XAxis dataKey="label" {...axisProps} angle={-60} textAnchor="end" interval={0} height={60} tick={{ fontSize: 10, fill: "#4a4945" }} />
             <YAxis {...axisProps} width={42} domain={[0, (max: number) => Math.max(100, Math.ceil(max / 10) * 10)]} />
-            <Tooltip cursor={{ fill: "#eef3f1" }} content={tip<Record<string, number | string>>((d) => ({ title: String(d.label), lines: stackKeys.filter((k) => d[k] != null && (d[k] as number) > 0).map((k) => `${k}: ${fmtNum(d[k] as number)} ${bl}`) }))} />
+            <Tooltip cursor={{ fill: "#ebe7de" }} content={tip<Record<string, number | string>>((d) => ({ title: String(d.label), lines: stackKeys.filter((k) => d[k] != null && (d[k] as number) > 0).map((k) => `${k}: ${fmtNum(d[k] as number)} ${bl}`) }))} />
             {stackKeys.map((k, i) => (
               <Bar key={k} dataKey={k} stackId="a" fill={k === OTHER_KEY ? OTHER_COLOR : elementColor(k, colorOrder)} stroke="#fff" strokeWidth={1} isAnimationActive={false} radius={i === stackKeys.length - 1 ? [3, 3, 0, 0] : 0} style={{ cursor: "pointer" }} onClick={(d: { payload?: { key: string } }) => d.payload && go(d.payload.key)} />
             ))}
@@ -123,7 +123,7 @@ export function EdsPage() {
       </ChartCard>
 
       <ChartCard className="mb-4" title={`원소 조성 히트맵 (${bl})`} subtitle="행 = 입자, 열 = 검출 빈도 상위 원소 · 색 농도 ∝ √(값/100) · '–' 미검출, '<Q' 정량한계 미만, '<D' 검출한계 미만, '?' 결측 · 입자 이름을 누르면 상세">
-        {valid.length === 0 ? <div className="text-[13px] text-ink-2 py-6 text-center">유효 입자가 없습니다.</div> : (
+        {valid.length === 0 ? <div className="text-[14px] text-ink-2 py-6 text-center">유효 입자가 없습니다.</div> : (
           <Heatmap
             maxHeight={460}
             rows={valid.map((p) => ({ key: p.key, label: `${p.sample_id}/${p.particle_id}` }))}
@@ -136,10 +136,10 @@ export function EdsPage() {
               const e = p.elements[c];
               const v = e && st === "detected" ? (basis === "wt" ? e.wt : e.at) : null;
               if (st === "missing") return { color: "#ffffff", text: "?", tooltip: `${r} · ${c}: 결측` };
-              if (st === "not_detected") return { color: "#f3f5f4", text: "–", tooltip: `${r} · ${c}: 미검출` };
-              if (st === "below_lod") return { color: "#eceeed", text: "<D", tooltip: `${r} · ${c}: 검출한계 미만` };
-              if (st === "below_loq") return { color: "#e3ecf8", text: "<Q", tooltip: `${r} · ${c}: 정량한계 미만(값 ${e?.wt ?? "—"} wt%, 정량 통계 제외)` };
-              if (v == null) return { color: "#f7f7f5", text: "·", tooltip: `${r} · ${c}: 검출, ${bl} 값 없음`, onClick: () => go(r) };
+              if (st === "not_detected") return { color: "#eeebe4", text: "–", tooltip: `${r} · ${c}: 미검출` };
+              if (st === "below_lod") return { color: "#e6e2d9", text: "<D", tooltip: `${r} · ${c}: 검출한계 미만` };
+              if (st === "below_loq") return { color: "#f6e0d6", text: "<Q", tooltip: `${r} · ${c}: 정량한계 미만(값 ${e?.wt ?? "—"} wt%, 정량 통계 제외)` };
+              if (v == null) return { color: "#f7f5f0", text: "·", tooltip: `${r} · ${c}: 검출, ${bl} 값 없음`, onClick: () => go(r) };
               const t = Math.sqrt(Math.min(100, v) / 100);
               return { color: seqColor(t), dark: t > 0.6, text: v >= 10 ? v.toFixed(0) : v.toFixed(1), tooltip: `${r} · ${c}: ${fmtNum(v)} ${bl}`, onClick: () => go(r) };
             }}
@@ -147,24 +147,24 @@ export function EdsPage() {
         )}
       </ChartCard>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-4">
         <ChartCard title={`원소 간 상관관계 (${method === "spearman" ? "Spearman ρ" : "Pearson r"}, ${bl})`}
           subtitle="두 원소 모두 판정 가능한 유효 입자 · 미검출·LOD 미만 = 0, LOQ 미만·결측 제외 · n < 5면 계산 안 함 · 파랑 양, 빨강 음"
           actions={<Segmented value={method} onChange={setMethod} options={[{ value: "spearman", label: "Spearman" }, { value: "pearson", label: "Pearson" }]} />}>
-          {matrixEls.length < 2 ? <div className="text-[13px] text-ink-2 py-6 text-center">검출된 원소가 2종 이상이어야 합니다.</div> : (
+          {matrixEls.length < 2 ? <div className="text-[14px] text-ink-2 py-6 text-center">검출된 원소가 2종 이상이어야 합니다.</div> : (
             <>
               <Heatmap rows={matrixEls.map((e) => ({ key: e, label: e }))} cols={matrixEls.map((e) => ({ key: e, label: e }))} rowLabelW={40} cellW={40} cellH={28}
                 cell={(a, b) => {
                   const c = corr.find((x) => x.a === a && x.b === b)!;
                   return { color: divColor(c.r), dark: c.r != null && Math.abs(c.r) > 0.75, text: c.r == null ? "n↓" : c.r.toFixed(2), tooltip: `${a}–${b}: ${c.r == null ? "계산 안 함(n 부족)" : (method === "spearman" ? "ρ = " : "r = ") + c.r.toFixed(3)}\nn = ${c.n} 입자` };
                 }} />
-              <p className="text-[12px] text-ink-3 mt-2">조성 자료는 합이 100인 폐쇄 자료라 한 원소가 크면 다른 원소가 작아지는 음의 상관이 인위적으로 생길 수 있습니다. 상관은 인과를 뜻하지 않습니다.</p>
+              <p className="text-[13px] text-ink-3 mt-2">조성 자료는 합이 100인 폐쇄 자료라 한 원소가 크면 다른 원소가 작아지는 음의 상관이 인위적으로 생길 수 있습니다. 상관은 인과를 뜻하지 않습니다.</p>
             </>
           )}
         </ChartCard>
 
         <ChartCard title="원소 간 동시 검출" subtitle="칸 = 두 원소가 함께 검출된 입자 수 / 둘 다 판정 가능한 입자 수 · 대각선 = 해당 원소 검출 입자 수 · 색 = Jaccard 지수">
-          {matrixEls.length < 2 ? <div className="text-[13px] text-ink-2 py-6 text-center">검출된 원소가 2종 이상이어야 합니다.</div> : (
+          {matrixEls.length < 2 ? <div className="text-[14px] text-ink-2 py-6 text-center">검출된 원소가 2종 이상이어야 합니다.</div> : (
             <Heatmap rows={matrixEls.map((e) => ({ key: e, label: e }))} cols={matrixEls.map((e) => ({ key: e, label: e }))} rowLabelW={40} cellW={40} cellH={28}
               cell={(a, b) => {
                 const c = co.find((x) => x.a === a && x.b === b)!;
@@ -176,7 +176,7 @@ export function EdsPage() {
 
       <ChartCard title={`입자별 원소 조성 산점도 (${bl})`} subtitle="두 원소 모두 판정 가능한 유효 입자 · 미검출은 0에 표시 · 정량한계 미만·결측 제외 · 점을 누르면 입자 상세"
         actions={
-          <span className="flex items-center gap-1.5 text-[12.5px]">
+          <span className="flex items-center gap-1.5 text-[13.5px]">
             X <select className="border border-line-2 rounded px-1 py-0.5" value={xEl} onChange={(e) => setXEl(e.target.value)}>{allEls.map((e) => <option key={e}>{e}</option>)}</select>
             Y <select className="border border-line-2 rounded px-1 py-0.5" value={yEl} onChange={(e) => setYEl(e.target.value)}>{allEls.map((e) => <option key={e}>{e}</option>)}</select>
           </span>
@@ -184,14 +184,14 @@ export function EdsPage() {
         <ElementScatter particles={valid} x={xEl} y={yEl} basis={basis} />
       </ChartCard>
 
-      <p className="text-[12px] text-ink-3 mt-4">데이터 출처: {data.files.filter((f) => f.kind === "eds").map((f) => f.name).join(", ") || "—"}</p>
+      <p className="text-[13px] text-ink-3 mt-4">데이터 출처: {data.files.filter((f) => f.kind === "eds").map((f) => f.name).join(", ") || "—"}</p>
     </>
   );
 }
 
 function SumHistogram({ particles, basis, tol }: { particles: Particle[]; basis: Basis; tol: number }) {
   const sums = particles.map((p) => (basis === "wt" ? p.wtSum : p.atSum)).filter((v): v is number => v != null);
-  if (!sums.length) return <div className="text-[13px] text-ink-2 py-10 text-center">합계를 계산할 값이 없습니다.</div>;
+  if (!sums.length) return <div className="text-[14px] text-ink-2 py-10 text-center">합계를 계산할 값이 없습니다.</div>;
   const lo = Math.floor(Math.min(80, ...sums) / 2.5) * 2.5, hi = Math.ceil(Math.max(120, ...sums) / 2.5) * 2.5;
   const bins: Array<{ x: number; label: string; n: number }> = [];
   for (let b = lo; b < hi; b += 2.5) bins.push({ x: b + 1.25, label: `${b}–${b + 2.5}`, n: sums.filter((v) => v >= b && v < b + 2.5).length });
@@ -205,12 +205,12 @@ function SumHistogram({ particles, basis, tol }: { particles: Particle[]; basis:
             <XAxis dataKey="x" type="number" domain={[lo, hi]} {...axisProps} tickFormatter={(v) => `${v}`} />
             <YAxis {...axisProps} allowDecimals={false} width={32} />
             <ReferenceArea x1={100 - tol} x2={100 + tol} fill="#1baf7a" fillOpacity={0.12} />
-            <Tooltip cursor={{ fill: "#eef3f1" }} content={tip<{ label: string; n: number }>((d) => ({ title: `합계 ${d.label}%`, lines: [`${d.n} 입자`] }))} />
-            <Bar dataKey="n" fill={SERIES[0]} radius={[3, 3, 0, 0]} isAnimationActive={false} />
+            <Tooltip cursor={{ fill: "#ebe7de" }} content={tip<{ label: string; n: number }>((d) => ({ title: `합계 ${d.label}%`, lines: [`${d.n} 입자`] }))} />
+            <Bar dataKey="n" fill={INK_BAR} radius={[3, 3, 0, 0]} isAnimationActive={false} />
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <p className="text-[12.5px] text-ink-2 mt-1">허용 범위 밖: <b className="tnum">{out}</b> / {sums.length} 입자</p>
+      <p className="text-[13.5px] text-ink-2 mt-1">허용 범위 밖: <b className="tnum">{out}</b> / {sums.length} 입자</p>
     </>
   );
 }
@@ -233,8 +233,8 @@ function ElementScatter({ particles, x, y, basis }: { particles: Particle[]; x: 
     (t === "positive" ? groups.positive : t === "negative" ? groups.negative : groups.other).push({ x: a, y: b, key: p.key, label: `${p.sample_id}/${p.particle_id}` });
   }
   const n = groups.positive.length + groups.negative.length + groups.other.length;
-  if (x === y) return <div className="text-[13px] text-ink-2 py-8 text-center">서로 다른 두 원소를 고르세요.</div>;
-  if (!n) return <div className="text-[13px] text-ink-2 py-8 text-center">두 원소 모두 판정 가능한 입자가 없습니다.</div>;
+  if (x === y) return <div className="text-[14px] text-ink-2 py-8 text-center">서로 다른 두 원소를 고르세요.</div>;
+  if (!n) return <div className="text-[14px] text-ink-2 py-8 text-center">두 원소 모두 판정 가능한 입자가 없습니다.</div>;
   const series = [
     { k: "positive", name: "대상 원소 검출 입자", color: SERIES[0] },
     { k: "negative", name: "대상 원소 미검출 입자", color: SERIES[1] },
@@ -246,9 +246,9 @@ function ElementScatter({ particles, x, y, basis }: { particles: Particle[]; x: 
       <div className="h-[320px] mt-1">
         <ResponsiveContainer>
           <ScatterChart margin={{ left: 0, right: 16, top: 8, bottom: 16 }}>
-            <CartesianGrid stroke="#e6eae8" />
-            <XAxis type="number" dataKey="x" name={x} {...axisProps} label={{ value: `${x} (${basis}%)`, position: "insideBottom", offset: -8, fill: "#4a5754", fontSize: 12 }} />
-            <YAxis type="number" dataKey="y" name={y} {...axisProps} width={44} label={{ value: `${y} (${basis}%)`, angle: -90, position: "insideLeft", fill: "#4a5754", fontSize: 12 }} />
+            <CartesianGrid stroke="#e2ded5" />
+            <XAxis type="number" dataKey="x" name={x} {...axisProps} label={{ value: `${x} (${basis}%)`, position: "insideBottom", offset: -8, fill: "#4a4945", fontSize: 12 }} />
+            <YAxis type="number" dataKey="y" name={y} {...axisProps} width={44} label={{ value: `${y} (${basis}%)`, angle: -90, position: "insideLeft", fill: "#4a4945", fontSize: 12 }} />
             <ZAxis range={[64, 64]} />
             <Tooltip content={tip<{ x: number; y: number; label: string }>((d) => ({ title: d.label, lines: [`${x}: ${fmtNum(d.x)} ${basis}%`, `${y}: ${fmtNum(d.y)} ${basis}%`, "누르면 입자 상세"] }))} />
             {series.map((s) => (
@@ -257,7 +257,7 @@ function ElementScatter({ particles, x, y, basis }: { particles: Particle[]; x: 
           </ScatterChart>
         </ResponsiveContainer>
       </div>
-      <p className="text-[12px] text-ink-3">n = {n} 입자</p>
+      <p className="text-[13px] text-ink-3">n = {n} 입자</p>
     </>
   );
 }

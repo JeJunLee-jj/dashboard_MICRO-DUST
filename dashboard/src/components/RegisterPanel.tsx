@@ -232,11 +232,11 @@ export function RegisterPanel() {
   const readyCount = rows.filter((r) => check(r).errors.length === 0).length;
 
   return (
-    <div className="bg-surface border-2 border-accent/40 rounded-lg p-4 mb-4">
+    <div className="bg-surface border-2 border-accent/40 rounded-[3px] p-4 mb-4">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
         <div>
           <h2 className="text-[16px] font-semibold">입자 등록 — SEM 이미지 1장 + EDS 정량 CSV 1개 = 입자 1개</h2>
-          <p className="text-[12.5px] text-ink-2 mt-0.5 max-w-3xl">
+          <p className="text-[13.5px] text-ink-2 mt-0.5 max-w-3xl">
             입자 하나를 찍은 SEM 이미지(TIFF·JPG·PNG)와 그 입자의 EDS 정량 파일(Phenom 등 장비가 내보낸 CSV·XLSX)을 함께 올리세요. 여러 입자를 한꺼번에 올려도 됩니다.
             Phenom TIFF는 픽셀 크기·배율·촬영 시각·가속전압을 파일에서 자동으로 읽습니다.
           </p>
@@ -247,10 +247,10 @@ export function RegisterPanel() {
         onDragOver={(e) => { e.preventDefault(); setOver(true); }}
         onDragLeave={() => setOver(false)}
         onDrop={(e) => { e.preventDefault(); setOver(false); addFiles([...e.dataTransfer.files]); }}
-        className={`border-2 border-dashed rounded-lg px-5 py-5 text-center ${over ? "border-accent bg-accent-soft" : "border-line-2 bg-surface-2"}`}
+        className={`border-2 border-dashed rounded-[3px] px-5 py-5 text-center ${over ? "border-accent bg-accent-soft" : "border-line-2 bg-surface-2"}`}
       >
-        <div className="text-[13.5px] font-medium">이미지와 EDS 파일을 여기로 끌어 놓기</div>
-        <div className="text-[12px] text-ink-3 mt-0.5">이미지와 CSV는 파일 수정 시각 순서대로 짝을 짓습니다 — 아래 표에서 확인하고 필요하면 바꾸세요.</div>
+        <div className="text-[14.5px] font-medium">이미지와 EDS 파일을 여기로 끌어 놓기</div>
+        <div className="text-[13px] text-ink-3 mt-0.5">이미지와 CSV는 파일 수정 시각 순서대로 짝을 짓습니다 — 아래 표에서 확인하고 필요하면 바꾸세요.</div>
         <div className="mt-2.5"><Button variant="primary" onClick={() => input.current?.click()}>파일 선택</Button></div>
         <input ref={input} type="file" multiple accept=".tif,.tiff,.jpg,.jpeg,.png,.bmp,.csv,.tsv,.txt,.xlsx,.xls" className="hidden" onChange={(e) => { addFiles([...(e.target.files ?? [])]); e.target.value = ""; }} />
       </div>
@@ -271,10 +271,10 @@ export function RegisterPanel() {
             const inst = r.image?.instrument;
             const contour = r.measure ? r.measure.props.contour.map(([x, y]) => `${x / r.measure!.scale},${y / r.measure!.scale}`).join(" ") : "";
             return (
-              <div key={r.id} className={`border rounded-lg p-3 ${errors.length ? "border-[#efc4c4]" : "border-line"}`}>
+              <div key={r.id} className={`border rounded-[3px] p-3 ${errors.length ? "border-[#efc4c4]" : "border-line"}`}>
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-[13px] font-semibold">입자 {idx + 1}</div>
-                  <button className="text-[12px] text-ink-3 hover:text-[#a42f2f]" onClick={() => setRows((rs) => rs.filter((x) => x.id !== r.id))}>목록에서 빼기</button>
+                  <div className="text-[14px] font-semibold">입자 {idx + 1}</div>
+                  <button className="text-[13px] text-ink-3 hover:text-[#a42f2f]" onClick={() => setRows((rs) => rs.filter((x) => x.id !== r.id))}>목록에서 빼기</button>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)_minmax(0,1fr)] gap-4">
                   {/* 이미지와 윤곽 */}
@@ -285,26 +285,26 @@ export function RegisterPanel() {
                           <img src={r.image.url} alt={r.image.filename} className="absolute inset-0 w-full h-full object-contain" />
                           {r.measure && r.image.width && r.image.height && (
                             <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 ${r.image.width} ${r.image.height}`} preserveAspectRatio="xMidYMid meet">
-                              <polygon points={contour} fill="rgba(42,120,214,0.15)" stroke="#5fb0ff" strokeWidth={Math.max(2, r.image.width / 300)} />
+                              <polygon points={contour} fill="rgba(241,85,52,0.16)" stroke="#ff6a3d" strokeWidth={Math.max(2, r.image.width / 300)} />
                             </svg>
                           )}
                         </>
                       ) : (
-                        <div className="absolute inset-0 grid place-items-center text-[12px] text-white/60 px-3 text-center">{r.loading ? "이미지 읽는 중…" : r.imageError ?? "이미지 없음"}</div>
+                        <div className="absolute inset-0 grid place-items-center text-[13px] text-white/60 px-3 text-center">{r.loading ? "이미지 읽는 중…" : r.imageError ?? "이미지 없음"}</div>
                       )}
                     </div>
-                    <div className="text-[11.5px] text-ink-3 mt-1 font-mono break-all">{r.imageName ?? "—"}</div>
+                    <div className="text-[12.5px] text-ink-3 mt-1 font-mono break-all">{r.imageName ?? "—"}</div>
                     {inst && (
-                      <div className="text-[11.5px] text-ink-2 mt-1 leading-relaxed">
+                      <div className="text-[12.5px] text-ink-2 mt-1 leading-relaxed">
                         {inst.instrument} · ×{inst.magnification?.toLocaleString()} · FW {fmt(inst.fieldWidthUm, 1)} µm · {inst.highVoltageKv} kV · {inst.detector} · WD {fmt(inst.workingDistanceMm)} mm
                         {inst.acquiredAtUtc && <> · 촬영 {localDateTime(inst.acquiredAtUtc)?.date} {localDateTime(inst.acquiredAtUtc)?.time}</>}
                       </div>
                     )}
-                    {r.image && !inst && <div className="text-[11.5px] text-ink-3 mt-1">장비 메타데이터 없음 — 픽셀 크기를 직접 입력하세요.</div>}
+                    {r.image && !inst && <div className="text-[12.5px] text-ink-3 mt-1">장비 메타데이터 없음 — 픽셀 크기를 직접 입력하세요.</div>}
                   </div>
 
                   {/* 정보 입력 */}
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-[12.5px] content-start">
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-[13.5px] content-start">
                     <Field label="시료 ID *"><input className="inp" value={r.sample_id} onChange={(e) => patch(r.id, { sample_id: e.target.value })} placeholder="예: 261008_Local" /></Field>
                     <Field label="입자 ID *"><input className="inp" value={r.particle_id} onChange={(e) => patch(r.id, { particle_id: e.target.value })} /></Field>
                     <Field label="채취 지점"><input className="inp" value={r.location} onChange={(e) => patch(r.id, { location: e.target.value })} placeholder="예: 천안아산역 승강장" /></Field>
@@ -318,7 +318,7 @@ export function RegisterPanel() {
                           {MORPHOLOGY_CLASSES.map((c) => <option key={c} value={c}>{morphologyLabel(c)}</option>)}
                         </select>
                         {r.measure?.candidate && r.morphology !== r.measure.candidate && (
-                          <button className="text-[12px] text-accent whitespace-nowrap hover:underline" onClick={() => patch(r.id, { morphology: r.measure!.candidate! })}>후보 「{morphologyLabel(r.measure.candidate)}」 적용</button>
+                          <button className="text-[13px] text-accent whitespace-nowrap hover:underline" onClick={() => patch(r.id, { morphology: r.measure!.candidate! })}>후보 「{morphologyLabel(r.measure.candidate)}」 적용</button>
                         )}
                       </div>
                     </Field>
@@ -326,7 +326,7 @@ export function RegisterPanel() {
                   </div>
 
                   {/* EDS와 측정 */}
-                  <div className="text-[12.5px] space-y-2">
+                  <div className="text-[13.5px] space-y-2">
                     <Field label="EDS 정량 파일">
                       <select className="inp" value={r.csvId ?? ""} onChange={(e) => patch(r.id, { csvId: e.target.value || null })}>
                         <option value="">(없음)</option>
@@ -334,7 +334,7 @@ export function RegisterPanel() {
                       </select>
                     </Field>
                     {csv?.table && (
-                      <table className="data text-[12px]">
+                      <table className="data text-[13px]">
                         <thead><tr><th>원소</th><th className="num">wt (원본)</th><th className="num">at (원본)</th></tr></thead>
                         <tbody>{csv.preview.map((p) => <tr key={p.symbol}><td>{p.symbol}</td><td className="num">{p.wt}</td><td className="num">{p.at}</td></tr>)}</tbody>
                       </table>
@@ -343,7 +343,7 @@ export function RegisterPanel() {
                     <div className="border border-line rounded p-2">
                       <div className="flex items-center justify-between">
                         <b>형상 지표(이미지 측정)</b>
-                        {r.image && <button className="text-[12px] text-accent hover:underline" onClick={() => runMeasure(r.id)}>{r.measuring ? "측정 중…" : "다시 측정"}</button>}
+                        {r.image && <button className="text-[13px] text-accent hover:underline" onClick={() => runMeasure(r.id)}>{r.measuring ? "측정 중…" : "다시 측정"}</button>}
                       </div>
                       {r.measureError && <div className="text-[#a42f2f] mt-1">{r.measureError}</div>}
                       {r.measure && (
@@ -356,13 +356,13 @@ export function RegisterPanel() {
                             <span>종횡비 {fmt(r.measure.props.ar)}</span>
                             <span>후보 {r.measure.candidate ? morphologyLabel(r.measure.candidate) : "없음"}</span>
                           </div>
-                          <label className="flex items-center gap-1.5 mt-1.5 text-[12px]">
+                          <label className="flex items-center gap-1.5 mt-1.5 text-[13px]">
                             임계 계수 <input type="range" min={0.4} max={1.2} step={0.05} value={r.params.thresholdFactor} onChange={(e) => patch(r.id, { params: { ...r.params, thresholdFactor: Number(e.target.value) } })} onPointerUp={() => setTimeout(() => runMeasure(r.id), 50)} onKeyUp={() => setTimeout(() => runMeasure(r.id), 50)} /> <span className="tnum w-8">{r.params.thresholdFactor.toFixed(2)}</span>
                             <label className="flex items-center gap-1 ml-2"><input type="checkbox" checked={!r.params.bright} onChange={(e) => { patch(r.id, { params: { ...r.params, bright: !e.target.checked } }); setTimeout(() => runMeasure(r.id), 50); }} />어두운 입자</label>
                           </label>
                           <label className="flex items-start gap-1.5 mt-1.5 font-medium">
                             <input type="checkbox" className="mt-0.5" checked={r.contourOk} onChange={(e) => patch(r.id, { contourOk: e.target.checked })} />
-                            파란 윤곽이 입자 외곽과 맞음 → 크기·형상 지표를 저장
+                            주황 윤곽이 입자 외곽과 맞음 → 크기·형상 지표를 저장
                           </label>
                         </>
                       )}
@@ -370,7 +370,7 @@ export function RegisterPanel() {
                   </div>
                 </div>
                 {(errors.length > 0 || warns.length > 0) && (
-                  <div className="mt-2 text-[12px] flex flex-wrap gap-x-4 gap-y-0.5">
+                  <div className="mt-2 text-[13px] flex flex-wrap gap-x-4 gap-y-0.5">
                     {errors.map((e) => <span key={e} className="text-[#a42f2f]">✕ {e}</span>)}
                     {warns.map((w) => <span key={w} className="text-[#6b4b00]">⚠ {w}</span>)}
                   </div>
@@ -381,7 +381,7 @@ export function RegisterPanel() {
           <div className="flex flex-wrap items-center gap-3">
             <Button variant="primary" disabled={!readyCount} onClick={submit}>입자 {readyCount}개 등록</Button>
             <Button variant="ghost" onClick={() => { setRows([]); setCsvs([]); }}>목록 비우기</Button>
-            {readyCount < rows.length && <span className="text-[12.5px] text-ink-2">오류(✕)가 있는 {rows.length - readyCount}개는 등록되지 않습니다.</span>}
+            {readyCount < rows.length && <span className="text-[13.5px] text-ink-2">오류(✕)가 있는 {rows.length - readyCount}개는 등록되지 않습니다.</span>}
           </div>
         </div>
       )}
@@ -393,7 +393,7 @@ export function RegisterPanel() {
 function Field({ label, children, wide }: { label: string; children: ReactNode; wide?: boolean }) {
   return (
     <label className={`block ${wide ? "col-span-2" : ""}`}>
-      <span className="block text-[11.5px] text-ink-2 mb-0.5">{label}</span>
+      <span className="block text-[12.5px] text-ink-2 mb-0.5">{label}</span>
       {children}
     </label>
   );

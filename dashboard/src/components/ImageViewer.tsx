@@ -51,7 +51,7 @@ export function ImageViewer({ image, height = 460, overlay }: { image: ImageAsse
   const zoomBy = (k: number) => zoomAt(box.current!.clientWidth / 2, height / 2, k);
 
   return (
-    <div className="border border-line rounded-lg overflow-hidden bg-[#1b1f1e]">
+    <div className="border border-line rounded-[3px] overflow-hidden bg-[#1b1f1e]">
       <div
         ref={box}
         className="relative overflow-hidden select-none cursor-grab active:cursor-grabbing"
@@ -78,7 +78,7 @@ export function ImageViewer({ image, height = 460, overlay }: { image: ImageAsse
         />
         {overlay && overlay.length > 2 && image.width && image.height && (
           <svg className="absolute pointer-events-none" style={{ left: pos.x, top: pos.y }} width={image.width * scale} height={image.height * scale} viewBox={`0 0 ${image.width} ${image.height}`}>
-            <polygon points={overlay.map(([x, y]) => `${x},${y}`).join(" ")} fill="rgba(42,120,214,0.12)" stroke="#5fb0ff" strokeWidth={2 / scale} />
+            <polygon points={overlay.map(([x, y]) => `${x},${y}`).join(" ")} fill="rgba(241,85,52,0.14)" stroke="#ff6a3d" strokeWidth={2 / scale} />
           </svg>
         )}
         {loaded === "error" && <div className="absolute inset-0 grid place-items-center text-white/80 text-sm">이미지를 표시할 수 없습니다.</div>}
@@ -88,7 +88,7 @@ export function ImageViewer({ image, height = 460, overlay }: { image: ImageAsse
           </div>
         )}
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-surface border-t border-line px-3 py-1.5 text-[12px] text-ink-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-surface border-t border-line px-3 py-1.5 text-[13px] text-ink-2">
         <span className="truncate">
           <span className="font-mono">{image.filename}</span>
           {image.width && <span className="ml-2 text-ink-3">{image.width}×{image.height}px</span>}

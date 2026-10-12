@@ -9,7 +9,7 @@ import { Card, Formula, Kpi, Legend, Notice, PageHeader, Pct, Segmented, fmtNum,
 import { axisProps, gridProps, tip } from "../components/chartKit";
 import { hazardSummary, massConcentrationAssessment, HAZARD_DISCLAIMER } from "../lib/hazard";
 import { quantValue } from "../lib/join";
-import { STATUS_COLOR, SERIES } from "../lib/palette";
+import {STATUS_COLOR, INK_BAR } from "../lib/palette";
 import { STATUS_LABEL } from "../lib/exports";
 import { elementNameKo } from "../lib/elements";
 
@@ -75,7 +75,7 @@ export function HazardPage() {
 
       <ElementHazardExplorer />
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-4">
         <ChartCard title="대상 원소별 검출 상태 구성" subtitle="유효 입자 기준 · 상태별 입자 수 비율(100% 누적) · 막대를 누르면 그 원소가 검출된 입자 목록"
           table={<table className="data"><thead><tr><th>원소</th>{STATUS_ORDER.map((k) => <th key={k} className="num">{STATUS_LABEL[k]}</th>)}</tr></thead><tbody>{statusData.map((r) => <tr key={r.symbol as string}><td>{r.symbol}</td>{STATUS_ORDER.map((k) => <td key={k} className="num">{r[k]}</td>)}</tr>)}</tbody></table>}>
           <Legend items={STATUS_ORDER.map((k) => ({ label: STATUS_LABEL[k], color: STATUS_COLOR[k] }))} />
@@ -85,8 +85,8 @@ export function HazardPage() {
                 <CartesianGrid {...gridProps} horizontal={false} vertical />
                 <XAxis type="number" domain={[0, 100]} allowDataOverflow ticks={[0, 25, 50, 75, 100]} {...axisProps} tickFormatter={(v) => `${v}%`} />
                 <YAxis type="category" dataKey="symbol" {...axisProps} width={36} />
-                <Tooltip cursor={{ fill: "#eef3f1" }} content={tip<Record<string, number | string>>((d) => ({ title: `${d.symbol} (${elementNameKo(String(d.symbol))}) — 유효 입자 ${d.total}`, lines: STATUS_ORDER.map((k) => `${STATUS_LABEL[k]}: ${d[k]}개 (${(d[`${k}%`] as number).toFixed(1)}%)`) }))} />
-                {STATUS_ORDER.map((k) => <Bar key={k} dataKey={`${k}%`} stackId="s" fill={STATUS_COLOR[k]} stroke={k === "missing" ? "#c8d0cd" : "#fff"} strokeWidth={1} barSize={18} isAnimationActive={false} style={{ cursor: "pointer" }}
+                <Tooltip cursor={{ fill: "#ebe7de" }} content={tip<Record<string, number | string>>((d) => ({ title: `${d.symbol} (${elementNameKo(String(d.symbol))}) — 유효 입자 ${d.total}`, lines: STATUS_ORDER.map((k) => `${STATUS_LABEL[k]}: ${d[k]}개 (${(d[`${k}%`] as number).toFixed(1)}%)`) }))} />
+                {STATUS_ORDER.map((k) => <Bar key={k} dataKey={`${k}%`} stackId="s" fill={STATUS_COLOR[k]} stroke={k === "missing" ? "#b9b4a9" : "#fff"} strokeWidth={1} barSize={18} isAnimationActive={false} style={{ cursor: "pointer" }}
                   onClick={(d: { payload?: { symbol: string } }) => { if (d.payload) { setFilters((f) => ({ ...f, element: d.payload!.symbol })); navigate({ page: "particles" }); } }} />)}
               </BarChart>
             </ResponsiveContainer>
@@ -98,12 +98,12 @@ export function HazardPage() {
             <div className="h-[330px]">
               <ResponsiveContainer>
                 <ScatterChart margin={{ left: 0, right: 16, top: 8, bottom: 8 }}>
-                  <CartesianGrid stroke="#e6eae8" />
+                  <CartesianGrid stroke="#e2ded5" />
                   <XAxis type="number" dataKey="x" domain={[-0.5, settings.targetElements.length - 0.5]} ticks={settings.targetElements.map((_, i) => i)} tickFormatter={(i) => settings.targetElements[i] ?? ""} {...axisProps} />
-                  <YAxis type="number" dataKey="y" scale="log" domain={[0.05, 100]} allowDataOverflow ticks={[0.1, 1, 10, 100]} tickFormatter={(v) => `${v}`} {...axisProps} width={44} label={{ value: "wt% (로그 눈금)", angle: -90, position: "insideLeft", fontSize: 11, fill: "#5f6b68" }} />
+                  <YAxis type="number" dataKey="y" scale="log" domain={[0.05, 100]} allowDataOverflow ticks={[0.1, 1, 10, 100]} tickFormatter={(v) => `${v}`} {...axisProps} width={44} label={{ value: "wt% (로그 눈금)", angle: -90, position: "insideLeft", fontSize: 11, fill: "#4a4945" }} />
                   <ZAxis range={[44, 44]} />
                   <Tooltip content={tip<{ label: string; el: string; y: number }>((d) => ({ title: d.label, lines: [`${d.el}: ${fmtNum(d.y)} wt%`] }))} />
-                  <Scatter data={strip.flatMap((s) => s.pts.map((p) => ({ ...p, x: s.i + jitter(p.key) })))} fill={SERIES[0]} fillOpacity={0.7} stroke="#fff" strokeWidth={1} isAnimationActive={false} style={{ cursor: "pointer" }}
+                  <Scatter data={strip.flatMap((s) => s.pts.map((p) => ({ ...p, x: s.i + jitter(p.key) })))} fill={INK_BAR} fillOpacity={0.75} stroke="#fff" strokeWidth={1} isAnimationActive={false} style={{ cursor: "pointer" }}
                     onClick={(d: { payload?: { key: string } }) => d.payload && (window.location.hash = hrefFor({ page: "particles", particleKey: d.payload.key }))} />
                 </ScatterChart>
               </ResponsiveContainer>
@@ -119,13 +119,13 @@ export function HazardPage() {
             <tbody>
               {hz.elementStats.map((e) => (
                 <tr key={e.symbol}>
-                  <td><b>{e.symbol}</b> <span className="text-[11.5px] text-ink-3">{elementNameKo(e.symbol)}</span></td>
+                  <td><b>{e.symbol}</b> <span className="text-[12.5px] text-ink-3">{elementNameKo(e.symbol)}</span></td>
                   <td className="num"><Pct k={e.detected} n={e.evaluable} /></td>
                   <td className="num">{e.ci && e.evaluable ? `${(e.ci.lo * 100).toFixed(1)}–${(e.ci.hi * 100).toFixed(1)}%` : "—"}</td>
                   <td className="num">{e.belowLoq}</td><td className="num">{e.belowLod}</td><td className="num">{e.notDetected}</td><td className="num">{e.missing}</td>
                   <td className="num">{e.wt.n ? `${fmtNum(e.wt.median)} [${fmtNum(e.wt.q1)}–${fmtNum(e.wt.q3)}] (${e.wt.n})` : "—"}</td>
                   <td className="num">{e.at.n ? `${fmtNum(e.at.median)} (${e.at.n})` : "—"}</td>
-                  <td className="text-[12px] max-w-[320px]">
+                  <td className="text-[13px] max-w-[320px]">
                     {e.rule ? (
                       <>
                         <div>{e.rule.assessment_category}</div>
@@ -141,7 +141,7 @@ export function HazardPage() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-5 mb-4">
         <ChartCard title="입자당 검출된 대상 원소 수" subtitle="판정 가능 입자(판정 불가 제외)" table={<table className="data"><thead><tr><th>원소 수</th><th className="num">입자</th></tr></thead><tbody>{hz.countDistribution.map((d) => <tr key={d.k}><td>{d.k}</td><td className="num">{d.particles}</td></tr>)}</tbody></table>}>
           <div className="h-[220px]">
             <ResponsiveContainer>
@@ -149,17 +149,17 @@ export function HazardPage() {
                 <CartesianGrid {...gridProps} />
                 <XAxis dataKey="k" {...axisProps} />
                 <YAxis {...axisProps} allowDecimals={false} width={32} />
-                <Tooltip cursor={{ fill: "#eef3f1" }} content={tip<{ k: number; particles: number }>((d) => ({ title: `대상 원소 ${d.k}개 검출`, lines: [`${d.particles} 입자`] }))} />
-                <Bar dataKey="particles" fill={SERIES[0]} radius={[4, 4, 0, 0]} barSize={24} isAnimationActive={false} />
+                <Tooltip cursor={{ fill: "#ebe7de" }} content={tip<{ k: number; particles: number }>((d) => ({ title: `대상 원소 ${d.k}개 검출`, lines: [`${d.particles} 입자`] }))} />
+                <Bar dataKey="particles" fill={INK_BAR} radius={[4, 4, 0, 0]} barSize={24} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </ChartCard>
         <Card title="복수 대상 원소 동시 검출 조합" subtitle="2개 이상 검출된 입자의 원소 조합 · 입자 수">
-          {hz.combos.length === 0 ? <p className="text-[13px] text-ink-2">2개 이상 동시 검출된 입자가 없습니다.</p> : (
-            <table className="data"><thead><tr><th>조합</th><th className="num">입자</th></tr></thead><tbody>{hz.combos.slice(0, 12).map((c) => <tr key={c.combo}><td className="font-mono text-[12.5px]">{c.combo}</td><td className="num">{c.particles}</td></tr>)}</tbody></table>
+          {hz.combos.length === 0 ? <p className="text-[14px] text-ink-2">2개 이상 동시 검출된 입자가 없습니다.</p> : (
+            <table className="data"><thead><tr><th>조합</th><th className="num">입자</th></tr></thead><tbody>{hz.combos.slice(0, 12).map((c) => <tr key={c.combo}><td className="font-mono text-[13.5px]">{c.combo}</td><td className="num">{c.particles}</td></tr>)}</tbody></table>
           )}
-          <p className="text-[12px] text-ink-3 mt-2">3개 이상 동시 검출: {hz.multi[3].ratio == null ? "—" : <Pct k={hz.multi[3].numerator} n={hz.multi[3].denominator} />}</p>
+          <p className="text-[13px] text-ink-3 mt-2">3개 이상 동시 검출: {hz.multi[3].ratio == null ? "—" : <Pct k={hz.multi[3].numerator} n={hz.multi[3].denominator} />}</p>
         </Card>
         <Card title="입자 형상별 대상 원소 검출" subtitle="형상 그룹마다 1개 이상 검출 입자 / 판정 가능 입자">
           <table className="data">
@@ -179,28 +179,28 @@ export function HazardPage() {
                 <tr key={g.group}>
                   <td>{g.group}</td><td className="num">{g.particles}</td><td className="num"><Pct k={g.positive} n={g.determinable} /></td>
                   <td className="num">{g.ratio.ci ? `${(g.ratio.ci.lo * 100).toFixed(1)}–${(g.ratio.ci.hi * 100).toFixed(1)}%` : "—"}</td>
-                  {settings.targetElements.map((e) => <td key={e} className="num text-[11.5px]">{g.perElement[e].evaluable ? `${g.perElement[e].detected}/${g.perElement[e].evaluable}` : "—"}</td>)}
+                  {settings.targetElements.map((e) => <td key={e} className="num text-[12.5px]">{g.perElement[e].evaluable ? `${g.perElement[e].detected}/${g.perElement[e].evaluable}` : "—"}</td>)}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <p className="text-[12px] text-ink-3 mt-2">원소 칸 = 검출 입자 / 판정 가능 입자. 표본 수가 작은 그룹의 비율은 신뢰구간이 넓습니다.</p>
+        <p className="text-[13px] text-ink-3 mt-2">원소 칸 = 검출 입자 / 판정 가능 입자. 표본 수가 작은 그룹의 비율은 신뢰구간이 넓습니다.</p>
       </Card>
 
       <Card title="계산하지 않는 지표" subtitle="아래 지표는 필요한 자료가 없어 분석 불가로 표시합니다 — 입자별 wt%로 추정하지 않습니다" className="mb-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           {massConcentrationAssessment().map((m) => (
-            <div key={m.metric} className="border border-line rounded-md p-3">
-              <div className="flex items-center gap-2"><span className="text-[11.5px] font-semibold border border-line-2 rounded px-1.5 py-px bg-surface-2">분석 불가</span><b className="text-[13px]">{m.metric}</b></div>
-              <ul className="list-disc pl-5 mt-1.5 text-[12.5px] text-ink-2 space-y-0.5">{m.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
+            <div key={m.metric} className="border border-line rounded-[3px] p-3">
+              <div className="flex items-center gap-2"><span className="text-[12.5px] font-semibold border border-line-2 rounded px-1.5 py-px bg-surface-2">분석 불가</span><b className="text-[14px]">{m.metric}</b></div>
+              <ul className="list-disc pl-5 mt-1.5 text-[13.5px] text-ink-2 space-y-0.5">{m.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
             </div>
           ))}
         </div>
         <div className="mt-3">
-          <div className="text-[13px] font-medium mb-1">보고된 PM 측정값(업로드한 경우)</div>
+          <div className="text-[14px] font-medium mb-1">보고된 PM 측정값(업로드한 경우)</div>
           {data.pm.filter((r) => r.pm25 != null || r.pm10 != null).length === 0 ? (
-            <p className="text-[12.5px] text-ink-2">업로드된 PM 측정값이 없습니다{data.pm.length ? `(파일은 있으나 값이 비어 있음: ${data.pm.length}행)` : ""}. 측정값은 입자 분석에서 유도하지 않습니다.</p>
+            <p className="text-[13.5px] text-ink-2">업로드된 PM 측정값이 없습니다{data.pm.length ? `(파일은 있으나 값이 비어 있음: ${data.pm.length}행)` : ""}. 측정값은 입자 분석에서 유도하지 않습니다.</p>
           ) : (
             <table className="data"><thead><tr><th>시료</th><th>위치</th><th>날짜</th><th className="num">PM2.5</th><th className="num">PM10</th><th>단위</th><th>방법</th><th>출처</th></tr></thead>
               <tbody>{data.pm.map((r, i) => <tr key={i}><td>{r.sample_id ?? "—"}</td><td>{r.collection_location ?? "—"}</td><td>{r.collection_date ?? "—"}</td><td className="num">{r.pm25 ?? "—"}</td><td className="num">{r.pm10 ?? "—"}</td><td>{r.unit ?? "단위 미상"}</td><td>{r.method ?? "—"}</td><td>{r.source ?? r.sourceFile}</td></tr>)}</tbody>

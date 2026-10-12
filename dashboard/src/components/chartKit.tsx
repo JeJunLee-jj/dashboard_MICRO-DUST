@@ -5,14 +5,14 @@ import { AXIS, GRID } from "../lib/palette";
 export const axisProps = {
   stroke: AXIS,
   tickLine: false,
-  tick: { fill: "#5f6b68", fontSize: 12 },
+  tick: { fill: "#4a4945", fontSize: 13 },
 } as const;
 
 export const gridProps = { stroke: GRID, vertical: false } as const;
 
 export function TipBox({ title, lines }: { title: ReactNode; lines: Array<ReactNode> }) {
   return (
-    <div className="bg-surface border border-line-2 rounded-md shadow-md px-3 py-2 text-[12px] max-w-[300px]">
+    <div className="bg-surface border border-line-2 rounded-sm shadow-[0_6px_24px_-8px_rgba(40,40,40,0.35)] px-3 py-2 text-[13px] max-w-[300px]">
       <div className="font-semibold text-ink mb-0.5">{title}</div>
       {lines.map((l, i) => (
         <div key={i} className="text-ink-2 tnum">{l}</div>

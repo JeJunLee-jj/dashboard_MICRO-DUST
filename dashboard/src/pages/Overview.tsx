@@ -10,7 +10,7 @@ import { axisProps, gridProps, pctTick, tip } from "../components/chartKit";
 import { computeKpis } from "../lib/filters";
 import { hazardSummary, HAZARD_DISCLAIMER } from "../lib/hazard";
 import { donutData, frequencyBars, morphologyDistribution, OTHER_KEY, type FrequencyBar, type MorphologyBar } from "../lib/viewModels";
-import { SERIES, OTHER_COLOR, elementColor, seqColor } from "../lib/palette";
+import {OTHER_COLOR, elementColor, seqColor, INK_BAR } from "../lib/palette";
 import { classifyParticleType, sourceCandidates } from "../lib/rules";
 import { followUps } from "../lib/limitations";
 import { compareGroupsBy, type GroupRow } from "../lib/samples";
@@ -86,7 +86,7 @@ export function OverviewPage() {
         <Notice kind="warning">{HAZARD_DISCLAIMER}</Notice>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-5 mb-4">
         <ChartCard
           title="주요 원소 조성 분포"
           subtitle={`입자별 조성(${basisLabel})의 산술평균 · 미검출=0 · n=${donut.n} 입자 · 출처: EDS 성분표`}
@@ -94,7 +94,7 @@ export function OverviewPage() {
           table={<table className="data"><thead><tr><th>원소</th><th className="num">평균 {basisLabel}</th></tr></thead><tbody>{donut.slices.map((d) => <tr key={d.name}><td>{d.name}</td><td className="num">{fmtNum(d.value)}</td></tr>)}</tbody></table>}
         >
           {donut.n === 0 ? (
-            <div className="h-[260px] grid place-items-center text-[13px] text-ink-2 text-center px-4">이 기준({basisLabel})의 정량값이 있는 유효 입자가 없습니다.<br />다른 기준을 선택하세요(값을 환산해 만들지 않음).</div>
+            <div className="h-[260px] grid place-items-center text-[14px] text-ink-2 text-center px-4">이 기준({basisLabel})의 정량값이 있는 유효 입자가 없습니다.<br />다른 기준을 선택하세요(값을 환산해 만들지 않음).</div>
           ) : (
             <div className="flex items-center gap-3">
               <div className="w-[200px] h-[220px] shrink-0">
@@ -107,7 +107,7 @@ export function OverviewPage() {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <ul className="text-[12.5px] space-y-1 flex-1">
+              <ul className="text-[13.5px] space-y-1 flex-1">
                 {donut.slices.map((d) => (
                   <li key={d.name} className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-sm" style={{ background: d.name === OTHER_KEY ? OTHER_COLOR : elementColor(d.name, colorOrder) }} />
@@ -131,8 +131,8 @@ export function OverviewPage() {
                 <CartesianGrid {...gridProps} horizontal={false} vertical />
                 <XAxis type="number" {...axisProps} allowDecimals={false} />
                 <YAxis type="category" dataKey="label" {...axisProps} width={120} />
-                <Tooltip cursor={{ fill: "#eef3f1" }} content={tip<MorphologyBar>((d) => ({ title: d.label, lines: [`${d.count}개 / ${kpi.total}개 (${((d.count / kpi.total) * 100).toFixed(1)}%)`, "누르면 해당 입자 목록"] }))} />
-                <Bar dataKey="count" fill={SERIES[0]} radius={[0, 4, 4, 0]} barSize={16} isAnimationActive={false} label={{ position: "right", fontSize: 12, fill: "#4a5754" }}
+                <Tooltip cursor={{ fill: "#ebe7de" }} content={tip<MorphologyBar>((d) => ({ title: d.label, lines: [`${d.count}개 / ${kpi.total}개 (${((d.count / kpi.total) * 100).toFixed(1)}%)`, "누르면 해당 입자 목록"] }))} />
+                <Bar dataKey="count" fill={INK_BAR} radius={[0, 4, 4, 0]} barSize={16} isAnimationActive={false} label={{ position: "right", fontSize: 12, fill: "#4a4945" }}
                   onClick={(d: { payload?: MorphologyBar }) => { if (d.payload) { setFilters((f) => ({ ...f, morphologies: [d.payload!.key] })); navigate({ page: "particles" }); } }} style={{ cursor: "pointer" }} />
               </BarChart>
             </ResponsiveContainer>
@@ -150,10 +150,10 @@ export function OverviewPage() {
                 <CartesianGrid {...gridProps} />
                 <XAxis dataKey="symbol" {...axisProps} />
                 <YAxis {...axisProps} domain={[0, 100]} tickFormatter={pctTick} width={42} />
-                <Tooltip cursor={{ fill: "#eef3f1" }} content={tip<FrequencyBar>((d) => ({ title: `${d.symbol} (${elementNameKo(d.symbol)})`, lines: [`검출 ${d.detected} / 판정 가능 ${d.evaluable} 입자`, `${d.frequencyPct.toFixed(1)}% (95% CI ${d.ciLoPct?.toFixed(1)}–${d.ciHiPct?.toFixed(1)}%)`, "누르면 이 원소가 검출된 입자 목록"] }))} />
-                <Bar dataKey="frequencyPct" fill={SERIES[0]} radius={[4, 4, 0, 0]} barSize={18} isAnimationActive={false} style={{ cursor: "pointer" }}
+                <Tooltip cursor={{ fill: "#ebe7de" }} content={tip<FrequencyBar>((d) => ({ title: `${d.symbol} (${elementNameKo(d.symbol)})`, lines: [`검출 ${d.detected} / 판정 가능 ${d.evaluable} 입자`, `${d.frequencyPct.toFixed(1)}% (95% CI ${d.ciLoPct?.toFixed(1)}–${d.ciHiPct?.toFixed(1)}%)`, "누르면 이 원소가 검출된 입자 목록"] }))} />
+                <Bar dataKey="frequencyPct" fill={INK_BAR} radius={[4, 4, 0, 0]} barSize={18} isAnimationActive={false} style={{ cursor: "pointer" }}
                   onClick={(d: { payload?: FrequencyBar }) => { if (d.payload) { setFilters((f) => ({ ...f, element: d.payload!.symbol })); navigate({ page: "particles" }); } }}>
-                  <ErrorBar dataKey={(d: FrequencyBar) => [d.frequencyPct - (d.ciLoPct ?? d.frequencyPct), (d.ciHiPct ?? d.frequencyPct) - d.frequencyPct]} stroke="#5f6b68" width={4} />
+                  <ErrorBar dataKey={(d: FrequencyBar) => [d.frequencyPct - (d.ciLoPct ?? d.frequencyPct), (d.ciHiPct ?? d.frequencyPct) - d.frequencyPct]} stroke="#4a4945" width={4} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -161,13 +161,13 @@ export function OverviewPage() {
         </ChartCard>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-4">
         <ChartCard
           title="형상과 대상 원소 검출의 관계"
           subtitle="칸 = 해당 형상 입자 중 원소가 검출된 비율(검출/판정 가능) · 검출된 대상 원소만 표시 · 관계의 통계 검정은 형태–성분 통합 분석 화면"
         >
           {hz.byMorphology.length === 0 || morphTargets.length === 0 ? (
-            <div className="text-[13px] text-ink-2 py-8 text-center">표시할 형상·대상 원소 조합이 없습니다.</div>
+            <div className="text-[14px] text-ink-2 py-8 text-center">표시할 형상·대상 원소 조합이 없습니다.</div>
           ) : (
             <>
               <Heatmap
@@ -202,9 +202,9 @@ export function OverviewPage() {
                 <CartesianGrid {...gridProps} />
                 <XAxis dataKey="group" {...axisProps} />
                 <YAxis {...axisProps} domain={[0, 100]} tickFormatter={pctTick} width={42} />
-                <Tooltip cursor={{ fill: "#eef3f1" }} content={tip<GroupRow & { pct: number }>((d) => ({ title: d.group, lines: [d.location ?? "", `대상 원소 검출 ${d.positive} / 판정 가능 ${d.determinable} 입자`, d.ratio == null ? "판정 가능 입자 없음" : `${d.pct.toFixed(1)}% (95% CI ${(d.ci!.lo * 100).toFixed(1)}–${(d.ci!.hi * 100).toFixed(1)}%)`] }))} />
-                <Bar dataKey="pct" fill={SERIES[0]} radius={[4, 4, 0, 0]} barSize={28} isAnimationActive={false} style={{ cursor: "pointer" }} onClick={() => navigate({ page: "samples" })}>
-                  <ErrorBar dataKey="err" stroke="#5f6b68" width={5} />
+                <Tooltip cursor={{ fill: "#ebe7de" }} content={tip<GroupRow & { pct: number }>((d) => ({ title: d.group, lines: [d.location ?? "", `대상 원소 검출 ${d.positive} / 판정 가능 ${d.determinable} 입자`, d.ratio == null ? "판정 가능 입자 없음" : `${d.pct.toFixed(1)}% (95% CI ${(d.ci!.lo * 100).toFixed(1)}–${(d.ci!.hi * 100).toFixed(1)}%)`] }))} />
+                <Bar dataKey="pct" fill={INK_BAR} radius={[4, 4, 0, 0]} barSize={28} isAnimationActive={false} style={{ cursor: "pointer" }} onClick={() => navigate({ page: "samples" })}>
+                  <ErrorBar dataKey="err" stroke="#4a4945" width={5} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -212,7 +212,7 @@ export function OverviewPage() {
         </ChartCard>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-5 mb-4">
         <Card title="대상 원소별 검출 현황" subtitle="원소마다 분모(판정 가능 입자)가 다를 수 있습니다" className="xl:col-span-2">
           <div className="overflow-auto">
             <table className="data">
@@ -222,46 +222,46 @@ export function OverviewPage() {
               <tbody>
                 {hz.elementStats.map((e) => (
                   <tr key={e.symbol}>
-                    <td><b>{e.symbol}</b> <span className="text-ink-3 text-[12px]">{elementNameKo(e.symbol)}</span></td>
+                    <td><b>{e.symbol}</b> <span className="text-ink-3 text-[13px]">{elementNameKo(e.symbol)}</span></td>
                     <td className="num">{e.detected - (settings.belowLoqCountsAsDetected ? e.belowLoq : 0)}</td>
                     <td className="num">{e.belowLoq}</td>
                     <td className="num">{e.belowLod}</td>
                     <td className="num">{e.notDetected}</td>
                     <td className="num">{e.missing}</td>
                     <td className="num"><Pct k={e.detected} n={e.evaluable} /></td>
-                    <td className="text-[12px] text-ink-2">{e.rule ? (e.rule.reference_name ? e.rule.assessment_category : "근거 미입력") : "규칙 없음"}</td>
+                    <td className="text-[13px] text-ink-2">{e.rule ? (e.rule.reference_name ? e.rule.assessment_category : "근거 미입력") : "규칙 없음"}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <p className="text-[12px] text-ink-3 mt-2">'검출 빈도'의 검출 수에는 정량한계 미만이 {settings.belowLoqCountsAsDetected ? "포함됩니다" : "포함되지 않습니다"}(설정에서 변경). 평가 범주는 화학종 기준 참고 정보이며 입자 위해도 판정에 쓰지 않습니다.</p>
+          <p className="text-[13px] text-ink-3 mt-2">'검출 빈도'의 검출 수에는 정량한계 미만이 {settings.belowLoqCountsAsDetected ? "포함됩니다" : "포함되지 않습니다"}(설정에서 변경). 평가 범주는 화학종 기준 참고 정보이며 입자 위해도 판정에 쓰지 않습니다.</p>
         </Card>
 
         <Card title="복수 대상 원소 동시 검출" subtitle="판정 가능 입자 기준">
-          <div className="space-y-1.5 text-[13px]">
+          <div className="space-y-1.5 text-[14px]">
             <div className="flex justify-between"><span>2개 이상 동시 검출</span><span className="tnum">{hz.multi[2].ratio == null ? "—" : <Pct k={hz.multi[2].numerator} n={hz.multi[2].denominator} />}</span></div>
             <div className="flex justify-between"><span>3개 이상 동시 검출</span><span className="tnum">{hz.multi[3].ratio == null ? "—" : <Pct k={hz.multi[3].numerator} n={hz.multi[3].denominator} />}</span></div>
           </div>
-          <div className="mt-3 text-[12.5px] font-medium text-ink-2">자주 나타난 조합</div>
-          {hz.combos.length === 0 ? <p className="text-[12.5px] text-ink-3 mt-1">2개 이상 동시 검출된 입자가 없습니다.</p> : (
-            <ul className="mt-1 space-y-1 text-[12.5px]">
+          <div className="mt-3 text-[13.5px] font-medium text-ink-2">자주 나타난 조합</div>
+          {hz.combos.length === 0 ? <p className="text-[13.5px] text-ink-3 mt-1">2개 이상 동시 검출된 입자가 없습니다.</p> : (
+            <ul className="mt-1 space-y-1 text-[13.5px]">
               {hz.combos.slice(0, 6).map((c) => <li key={c.combo} className="flex justify-between"><span className="font-mono">{c.combo}</span><span className="tnum text-ink-2">{c.particles}개</span></li>)}
             </ul>
           )}
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <Card title="입자 유형 및 발생원 후보" subtitle="규칙 기반 1차 선별 결과 — 확정이 아님 · 유효 입자 기준" actions={<a className="text-[12px] text-accent hover:underline" href="#/integration">자세히</a>}>
-          <div className="text-[12.5px] font-medium text-ink-2 mb-1">입자 유형(조성 규칙)</div>
-          <ul className="space-y-0.5 text-[12.5px] mb-3">{types.types.map(([k, v]) => <li key={k} className="flex justify-between"><span>{k}</span><span className="tnum text-ink-2">{v}</span></li>)}</ul>
-          <div className="text-[12.5px] font-medium text-ink-2 mb-1">발생원 후보 요약</div>
-          <ul className="space-y-0.5 text-[12.5px]">{types.sources.map(([k, v]) => <li key={k} className="flex justify-between"><span>{k}</span><span className="tnum text-ink-2">{v}</span></li>)}</ul>
+      <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-5">
+        <Card title="입자 유형 및 발생원 후보" subtitle="규칙 기반 1차 선별 결과 — 확정이 아님 · 유효 입자 기준" actions={<a className="text-[13px] text-accent hover:underline" href="#/integration">자세히</a>}>
+          <div className="text-[13.5px] font-medium text-ink-2 mb-1">입자 유형(조성 규칙)</div>
+          <ul className="space-y-0.5 text-[13.5px] mb-3">{types.types.map(([k, v]) => <li key={k} className="flex justify-between"><span>{k}</span><span className="tnum text-ink-2">{v}</span></li>)}</ul>
+          <div className="text-[13.5px] font-medium text-ink-2 mb-1">발생원 후보 요약</div>
+          <ul className="space-y-0.5 text-[13.5px]">{types.sources.map(([k, v]) => <li key={k} className="flex justify-between"><span>{k}</span><span className="tnum text-ink-2">{v}</span></li>)}</ul>
         </Card>
-        <Card title="데이터 품질 및 분석 한계" actions={<a className="text-[12px] text-accent hover:underline" href="#/data">품질 검증</a>}>
-          <div className="flex gap-2 mb-2"><LevelBadge level="error" /> <span className="text-[13px] tnum">{issueCount.error}건</span><LevelBadge level="warning" /> <span className="text-[13px] tnum">{issueCount.warning}건</span></div>
-          <ul className="text-[12.5px] text-ink-2 space-y-1 list-disc pl-4">
+        <Card title="데이터 품질 및 분석 한계" actions={<a className="text-[13px] text-accent hover:underline" href="#/data">품질 검증</a>}>
+          <div className="flex gap-2 mb-2"><LevelBadge level="error" /> <span className="text-[14px] tnum">{issueCount.error}건</span><LevelBadge level="warning" /> <span className="text-[14px] tnum">{issueCount.warning}건</span></div>
+          <ul className="text-[13.5px] text-ink-2 space-y-1 list-disc pl-4">
             <li>EDS 정량값은 측정 조건·입자 크기·기판 신호에 영향을 받는 반정량 값입니다.</li>
             <li>탄소 코팅·기판 신호 영향: {settings.preparationChecked ? "확인함(설정)" : <b className="text-ink">확인되지 않음</b>}</li>
             <li>입자 개수 비율 ≠ 질량 비율 ≠ 대기 농도. 질량 비율·PM 농도는 계산하지 않습니다(분석 불가).</li>
@@ -269,7 +269,7 @@ export function OverviewPage() {
           </ul>
         </Card>
         <Card title="추가 조사가 필요한 항목" subtitle="현재 데이터 상태에서 자동 정리">
-          <ul className="text-[12.5px] space-y-1.5">
+          <ul className="text-[13.5px] space-y-1.5">
             {todo.slice(0, 8).map((t) => (
               <li key={t.item}><b className="text-ink">{t.item}</b>{t.count != null && <span className="tnum text-ink-3"> ({t.count})</span>} <span className="text-ink-2">— {t.detail}</span></li>
             ))}

@@ -44,7 +44,7 @@ export function ParticleDetail({ particleKey }: { particleKey: string }) {
   if (!p || !derived) {
     return (
       <div className="space-y-3">
-        <a href={hrefFor({ page: "particles" })} className="text-accent text-[13px]">← 입자 목록</a>
+        <a href={hrefFor({ page: "particles" })} className="text-accent text-[14px]">← 입자 목록</a>
         <Notice kind="warning">입자 “{particleKey}”를 찾을 수 없습니다. 데이터가 바뀌었을 수 있습니다.</Notice>
       </div>
     );
@@ -85,8 +85,8 @@ export function ParticleDetail({ particleKey }: { particleKey: string }) {
   return (
     <div>
       <div className="flex flex-wrap items-center gap-3 mb-3 no-print">
-        <a href={hrefFor({ page: "particles" })} className="text-accent text-[13px] hover:underline">← 입자 목록</a>
-        <span className="text-ink-3 text-[12.5px] tnum">{idx >= 0 ? `${idx + 1} / ${filtered.length} (필터 기준)` : "현재 필터 밖의 입자"}</span>
+        <a href={hrefFor({ page: "particles" })} className="text-accent text-[14px] hover:underline">← 입자 목록</a>
+        <span className="text-ink-3 text-[13.5px] tnum">{idx >= 0 ? `${idx + 1} / ${filtered.length} (필터 기준)` : "현재 필터 밖의 입자"}</span>
         <div className="ml-auto flex gap-2">
           <Button small disabled={!prev} onClick={() => prev && (window.location.hash = hrefFor({ page: "particles", particleKey: prev.key }))}>‹ 이전</Button>
           <Button small disabled={!next} onClick={() => next && (window.location.hash = hrefFor({ page: "particles", particleKey: next.key }))}>다음 ›</Button>
@@ -96,8 +96,8 @@ export function ParticleDetail({ particleKey }: { particleKey: string }) {
         <h1 className="text-[22px] font-semibold">{p.sample_id} / {p.particle_id}</h1>
         {p.origin === "demo" && <DemoTag />}
         <TargetBadge status={derived.target.status} />
-        <span className="text-[13px] text-ink-2">{p.date ?? "채취일 미기재"} · {p.location ?? "위치 미기재"}{m?.sample_type ? ` · ${m.sample_type}` : ""}</span>
-        <label className="ml-auto flex items-center gap-1.5 text-[12.5px] text-ink-2 no-print">
+        <span className="text-[14px] text-ink-2">{p.date ?? "채취일 미기재"} · {p.location ?? "위치 미기재"}{m?.sample_type ? ` · ${m.sample_type}` : ""}</span>
+        <label className="ml-auto flex items-center gap-1.5 text-[13.5px] text-ink-2 no-print">
           <input type="checkbox" checked={!!override?.excluded} onChange={(e) => setOverride(p.key, { excluded: e.target.checked })} />
           이 입자를 분석에서 제외
         </label>
@@ -108,7 +108,7 @@ export function ParticleDetail({ particleKey }: { particleKey: string }) {
           {p.image ? (
             <ImageViewer image={p.image} height={480} overlay={measure ? measure.props.contour.map(([x, y]) => [x / measure.scale, y / measure.scale] as [number, number]) : null} />
           ) : (
-            <div className="h-[300px] border border-dashed border-line-2 rounded-lg grid place-items-center text-center text-ink-2 text-[13px] bg-surface px-6">
+            <div className="h-[300px] border border-dashed border-line-2 rounded-[3px] grid place-items-center text-center text-ink-2 text-[14px] bg-surface px-6">
               <div>
                 <b className="text-ink">연결된 SEM 이미지가 없습니다</b>
                 <div className="mt-1">{m?.image_filename ? <>메타데이터의 파일 “{m.image_filename}”을 데이터 업로드 화면에서 올리면 연결됩니다.</> : <>메타데이터에 image_filename을 적거나 이미지 파일명을 입자 ID({p.particle_id})와 같게 하세요.</>}</div>
@@ -117,7 +117,7 @@ export function ParticleDetail({ particleKey }: { particleKey: string }) {
           )}
 
           <Card title="SEM 촬영 정보와 크기" subtitle="장비 메타데이터·실측값만 표시하며 없는 값은 계산하지 않습니다">
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[13px]">
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[14px]">
               <dt className="text-ink-3">장비</dt><dd>{m?.instrument ?? "미기재"}</dd>
               <dt className="text-ink-3">촬영 시각</dt><dd className="tnum">{m?.acquired_at ?? "미기재"}</dd>
               <dt className="text-ink-3">배율</dt><dd className="tnum">{m?.magnification ? `×${m.magnification.toLocaleString()}` : "미기재"}</dd>
@@ -129,7 +129,7 @@ export function ParticleDetail({ particleKey }: { particleKey: string }) {
               <dt className="text-ink-3">최대 Feret 지름</dt><dd className="tnum">{m?.feret_diameter != null ? `${fmtNum(m.feret_diameter)} µm` : "측정값 없음"}</dd>
               <dt className="text-ink-3">투영 면적</dt><dd className="tnum">{m?.projected_area != null ? `${fmtNum(m.projected_area)} µm²` : "측정값 없음"}</dd>
               <dt className="text-ink-3">원형도 · 고형도 · 종횡비</dt><dd className="tnum">{m?.circularity != null ? `${fmtNum(m.circularity)} · ${fmtNum(m.solidity)} · ${fmtNum(m.aspect_ratio)}` : "측정값 없음"}</dd>
-              {m?.size_method && (<><dt className="text-ink-3">크기 측정 방법</dt><dd className="text-[12px]">{m.size_method}</dd></>)}
+              {m?.size_method && (<><dt className="text-ink-3">크기 측정 방법</dt><dd className="text-[13px]">{m.size_method}</dd></>)}
               <dt className="text-ink-3">분석 조건</dt><dd>{m?.analysis_conditions ?? "미기재"}</dd>
               {m?.notes && (<><dt className="text-ink-3">비고</dt><dd>{m.notes}</dd></>)}
             </dl>
@@ -139,19 +139,19 @@ export function ParticleDetail({ particleKey }: { particleKey: string }) {
             title="이미지 기반 형상 지표 측정"
             subtitle="정보바 제외 → 블러 → 임계값(Otsu × 계수) → 닫힘·구멍 채우기 → 가장 큰 영역. 윤곽을 확인한 경우에만 저장하며, 형상은 '후보'만 제안합니다."
           >
-            {!p.image ? <p className="text-[13px] text-ink-2">이미지가 없어 측정할 수 없습니다.</p> : (
+            {!p.image ? <p className="text-[14px] text-ink-2">이미지가 없어 측정할 수 없습니다.</p> : (
               <>
                 <div className="flex flex-wrap items-center gap-3 mb-2 no-print">
                   <Button onClick={runMeasure} disabled={measuring}>{measuring ? "측정 중…" : "형상 지표 측정"}</Button>
-                  <label className="flex items-center gap-1.5 text-[12.5px] text-ink-2">임계 계수
+                  <label className="flex items-center gap-1.5 text-[13.5px] text-ink-2">임계 계수
                     <input type="range" min={0.4} max={1.2} step={0.05} value={params.thresholdFactor} onChange={(e) => setParams({ ...params, thresholdFactor: Number(e.target.value) })} />
                     <span className="tnum w-8">{params.thresholdFactor.toFixed(2)}</span></label>
-                  <label className="flex items-center gap-1.5 text-[12.5px] text-ink-2"><input type="checkbox" checked={!params.bright} onChange={(e) => setParams({ ...params, bright: !e.target.checked })} />입자가 배경보다 어두움</label>
+                  <label className="flex items-center gap-1.5 text-[13.5px] text-ink-2"><input type="checkbox" checked={!params.bright} onChange={(e) => setParams({ ...params, bright: !e.target.checked })} />입자가 배경보다 어두움</label>
                 </div>
                 {measureErr && <Notice kind="warning">{measureErr}</Notice>}
                 {measure && (
                   <div className="space-y-2">
-                    <table className="data text-[12.5px]">
+                    <table className="data text-[13.5px]">
                       <tbody>
                         <tr><td>등가원 지름</td><td className="num">{measure.eqdPx.toFixed(1)} px</td><td className="num">{measure.eqdUm != null ? `${measure.eqdUm.toFixed(2)} µm` : "보정 없음"}</td></tr>
                         <tr><td>투영 면적</td><td className="num">{measure.areaPx.toFixed(0)} px²</td><td className="num">{measure.areaUm2 != null ? `${measure.areaUm2.toFixed(2)} µm²` : "보정 없음"}</td></tr>
@@ -161,7 +161,7 @@ export function ParticleDetail({ particleKey }: { particleKey: string }) {
                         <tr><td>종횡비(장축/단축)</td><td className="num" colSpan={2}>{measure.props.ar.toFixed(2)}</td></tr>
                       </tbody>
                     </table>
-                    <p className="text-[12px] text-ink-3">임계값 {Math.round(measure.threshold)} (Otsu {Math.round(measure.otsu)} × {measure.params.thresholdFactor}) · 하단 정보바 제외 {measure.cropBottom}px · 파란 윤곽이 측정 영역입니다. 윤곽이 입자와 다르면 임계 계수를 바꿔 다시 측정하고, 맞지 않으면 저장하지 마세요.{measure.touchesBorder && " ⚠ 측정 영역이 이미지 가장자리에 닿았습니다."}{p.image.synthetic && " DEMO 합성 이미지에서 측정한 값입니다."}</p>
+                    <p className="text-[13px] text-ink-3">임계값 {Math.round(measure.threshold)} (Otsu {Math.round(measure.otsu)} × {measure.params.thresholdFactor}) · 하단 정보바 제외 {measure.cropBottom}px · 주황 윤곽이 측정 영역입니다. 윤곽이 입자와 다르면 임계 계수를 바꿔 다시 측정하고, 맞지 않으면 저장하지 마세요.{measure.touchesBorder && " ⚠ 측정 영역이 이미지 가장자리에 닿았습니다."}{p.image.synthetic && " DEMO 합성 이미지에서 측정한 값입니다."}</p>
                     {p.meta && (
                       <div className="no-print flex items-center gap-2">
                         <Button small variant="primary" disabled={saved} onClick={() => {
@@ -171,10 +171,10 @@ export function ParticleDetail({ particleKey }: { particleKey: string }) {
                           });
                           setSaved(true);
                         }}>{saved ? "저장됨" : "윤곽 확인 — 측정값을 입자 데이터에 저장"}</Button>
-                        {measure.eqdUm == null && <span className="text-[12px] text-ink-3">픽셀 크기가 없어 µm 크기는 저장되지 않습니다.</span>}
+                        {measure.eqdUm == null && <span className="text-[13px] text-ink-3">픽셀 크기가 없어 µm 크기는 저장되지 않습니다.</span>}
                       </div>
                     )}
-                    <div className="border border-line rounded-md p-2.5 text-[12.5px]">
+                    <div className="border border-line rounded-[3px] p-2.5 text-[13.5px]">
                       <b>형상 후보:</b> {measure.candidate ? morphologyLabel(measure.candidate) : "제안 없음"} — {measure.candidateReason}
                       <div className="text-ink-3 mt-1">기준(합성 데이터 기본값, 재보정 필요): 종횡비 ≥ {SHAPE_THRESHOLDS.fibrousAspect} 섬유상 · 고형도 &lt; {SHAPE_THRESHOLDS.agglomerateSolidity} 응집체 · 원형도 ≥ {SHAPE_THRESHOLDS.sphericalCircularity} 및 종횡비 &lt; {SHAPE_THRESHOLDS.sphericalAspectMax} 구형</div>
                       {measure.candidate && (
@@ -192,15 +192,15 @@ export function ParticleDetail({ particleKey }: { particleKey: string }) {
 
         <div className="space-y-4">
           <Card title="관측 사실" subtitle="SEM 형상 판정과 EDS에서 검출된 원소 — 해석을 더하지 않은 값">
-            <div className="text-[13px] space-y-2">
+            <div className="text-[14px] space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-ink-3 w-20">형상</span>
                 <b>{morphologyLabel(p.morphology)}</b>
-                <span className="text-[12px] text-ink-3">({p.morphologySource === "user" ? "대시보드에서 판정" : p.morphologySource === "metadata" ? "메타데이터" : "판정값 없음"}{p.classificationMethod ? ` · ${p.classificationMethod}` : ""})</span>
+                <span className="text-[13px] text-ink-3">({p.morphologySource === "user" ? "대시보드에서 판정" : p.morphologySource === "metadata" ? "메타데이터" : "판정값 없음"}{p.classificationMethod ? ` · ${p.classificationMethod}` : ""})</span>
               </div>
               <div className="flex flex-wrap items-center gap-2 no-print">
                 <span className="text-ink-3 w-20">판정 수정</span>
-                <select className="border border-line-2 rounded px-2 py-1 text-[12.5px]" value={override?.morphology !== undefined ? (override.morphology ?? "none") : "__meta"} onChange={(e) => {
+                <select className="border border-line-2 rounded px-2 py-1 text-[13.5px]" value={override?.morphology !== undefined ? (override.morphology ?? "none") : "__meta"} onChange={(e) => {
                   const v = e.target.value;
                   if (v === "__meta") setOverride(p.key, { morphology: undefined, morphologyMethod: undefined });
                   else setMorph(v === "none" ? null : (v as MorphologyClass), "사용자 판정(대시보드 입력)");
@@ -222,7 +222,7 @@ export function ParticleDetail({ particleKey }: { particleKey: string }) {
           </Card>
 
           <Card title="EDS 원소 조성표" subtitle={`출처: ${[...new Set(data.eds.filter((r) => `${r.sample_id}::${r.particle_id}` === p.key).map((r) => r.sourceFile))].join(", ") || "EDS 없음"} · 측정 방법: ${p.measurementMethod ?? "미기재"}`}>
-            {!p.hasEds ? <p className="text-[13px] text-ink-2">이 입자의 EDS 데이터가 없습니다.</p> : (
+            {!p.hasEds ? <p className="text-[14px] text-ink-2">이 입자의 EDS 데이터가 없습니다.</p> : (
               <div className="overflow-auto max-h-[380px]">
                 <table className="data">
                   <thead><tr><th>원소</th><th>상태</th><th className="num">wt%</th><th className="num">at%</th><th className="num">LOD/LOQ</th><th>상태 근거</th></tr></thead>
@@ -234,18 +234,18 @@ export function ParticleDetail({ particleKey }: { particleKey: string }) {
                       if (!e && !isT) return null;
                       return (
                         <tr key={s} className={e ? "" : "text-ink-3"}>
-                          <td><b>{s}</b> <span className="text-[11.5px] text-ink-3">{elementNameKo(s)}</span>{isT && <span className="ml-1 text-[10.5px] border border-line-2 rounded px-1 text-ink-2">대상</span>}</td>
+                          <td><b>{s}</b> <span className="text-[12.5px] text-ink-3">{elementNameKo(s)}</span>{isT && <span className="ml-1 text-[11.5px] border border-line-2 rounded px-1 text-ink-2">대상</span>}</td>
                           <td><StatusBadge status={st.status} /></td>
                           <td className="num">{e?.wt != null ? e.wt.toFixed(2) : "—"}</td>
                           <td className="num">{e?.at != null ? e.at.toFixed(2) : "—"}</td>
                           <td className="num">{e?.detection_limit ?? "—"}/{e?.quantification_limit ?? "—"}</td>
-                          <td className="text-[11.5px] text-ink-3">{SOURCE_LABEL[st.source]}</td>
+                          <td className="text-[12.5px] text-ink-3">{SOURCE_LABEL[st.source]}</td>
                         </tr>
                       );
                     })}
                   </tbody>
                   <tfoot>
-                    <tr><td colSpan={2} className="text-[12px] text-ink-2">합계(기재된 값)</td><td className="num">{p.wtSum?.toFixed(2) ?? "—"}</td><td className="num">{p.atSum?.toFixed(2) ?? "—"}</td><td colSpan={2} className="text-[11.5px] text-ink-3">{p.normalized == null ? "정규화 여부 미기재" : p.normalized ? "정규화된 값" : "비정규화 원자료"}</td></tr>
+                    <tr><td colSpan={2} className="text-[13px] text-ink-2">합계(기재된 값)</td><td className="num">{p.wtSum?.toFixed(2) ?? "—"}</td><td className="num">{p.atSum?.toFixed(2) ?? "—"}</td><td colSpan={2} className="text-[12.5px] text-ink-3">{p.normalized == null ? "정규화 여부 미기재" : p.normalized ? "정규화된 값" : "비정규화 원자료"}</td></tr>
                   </tfoot>
                 </table>
               </div>
@@ -258,16 +258,16 @@ export function ParticleDetail({ particleKey }: { particleKey: string }) {
           </Card>
 
           <Card title="해석 가설: 입자 유형과 발생원 후보" subtitle={`분류 방식: ${derived.type.method} · 확정이 아닌 후보`}>
-            <div className="text-[13px] mb-3">
+            <div className="text-[14px] mb-3">
               <span className="text-ink-3">입자 유형 후보</span> <b className="ml-1">{derived.type.label}</b>
-              <ul className="text-[12px] text-ink-2 mt-1 list-disc pl-5">{derived.type.evidence.map((e, i) => <li key={i}>{e}</li>)}</ul>
+              <ul className="text-[13px] text-ink-2 mt-1 list-disc pl-5">{derived.type.evidence.map((e, i) => <li key={i}>{e}</li>)}</ul>
             </div>
-            <div className="text-[13px] font-medium mb-1.5">발생원 후보 — {derived.source.summaryLabel}</div>
-            {derived.source.matches.length === 0 && <p className="text-[12.5px] text-ink-2 mb-2">규칙과 일치하는 발생원 후보가 없습니다(발생원 판별 불가). 다른 기원의 가능성을 배제한다는 뜻이 아닙니다.</p>}
+            <div className="text-[14px] font-medium mb-1.5">발생원 후보 — {derived.source.summaryLabel}</div>
+            {derived.source.matches.length === 0 && <p className="text-[13.5px] text-ink-2 mb-2">규칙과 일치하는 발생원 후보가 없습니다(발생원 판별 불가). 다른 기원의 가능성을 배제한다는 뜻이 아닙니다.</p>}
             <div className="space-y-2">
               {derived.source.matches.map((mt) => (
-                <div key={mt.ruleId} className="border border-line rounded-md p-3 text-[12.5px]">
-                  <div className="flex items-center justify-between gap-2"><b className="text-[13px]">{mt.candidate}</b><span className="text-[11.5px] border border-line-2 rounded px-1.5 py-px">판단 수준: {mt.level}</span></div>
+                <div key={mt.ruleId} className="border border-line rounded-[3px] p-3 text-[13.5px]">
+                  <div className="flex items-center justify-between gap-2"><b className="text-[14px]">{mt.candidate}</b><span className="text-[12.5px] border border-line-2 rounded px-1.5 py-px">판단 수준: {mt.level}</span></div>
                   <dl className="mt-1.5 space-y-1">
                     <div><dt className="inline text-ink-3">판단에 활용한 특징 · </dt><dd className="inline">{mt.features}</dd></div>
                     <div><dt className="text-ink-3">실제 데이터에서 확인된 근거</dt><dd><ul className="list-disc pl-5">{mt.evidence.map((e, i) => <li key={i}>{e}</li>)}{mt.supportingEvidence.map((e, i) => <li key={"s" + i}>보조: {e}</li>)}</ul></dd></div>
@@ -279,7 +279,7 @@ export function ParticleDetail({ particleKey }: { particleKey: string }) {
                 </div>
               ))}
               {derived.source.notEvaluable.map((n) => (
-                <div key={n.candidate} className="border border-dashed border-line-2 rounded-md p-2.5 text-[12.5px] text-ink-2">
+                <div key={n.candidate} className="border border-dashed border-line-2 rounded-[3px] p-2.5 text-[13.5px] text-ink-2">
                   <b className="text-ink">{n.candidate}</b> — 판별 불가: {n.reason}. 필요: {n.requiredValidation.join(", ")}
                 </div>
               ))}
@@ -287,7 +287,7 @@ export function ParticleDetail({ particleKey }: { particleKey: string }) {
           </Card>
 
           <Card title="확인되지 않은 사항과 데이터 품질" subtitle="점검 항목은 데이터 상태를 그대로 보여주며 임의의 신뢰도 점수를 만들지 않습니다">
-            <ul className="text-[12.5px] space-y-1 mb-3">
+            <ul className="text-[13.5px] space-y-1 mb-3">
               {checks.map((c) => (
                 <li key={c.label} className="flex gap-2">
                   <span aria-hidden className={c.ok ? "text-[#0a7d0a]" : "text-[#a42f2f]"}>{c.ok ? "✓" : "✕"}</span>
@@ -298,10 +298,10 @@ export function ParticleDetail({ particleKey }: { particleKey: string }) {
             </ul>
             {p.flags.length > 0 && (
               <ul className="space-y-1.5">
-                {p.flags.map((f, i) => <li key={i} className="flex items-start gap-2 text-[12.5px]"><LevelBadge level={f.level} /><span>{f.message}</span></li>)}
+                {p.flags.map((f, i) => <li key={i} className="flex items-start gap-2 text-[13.5px]"><LevelBadge level={f.level} /><span>{f.message}</span></li>)}
               </ul>
             )}
-            <ul className="text-[12px] text-ink-3 mt-3 list-disc pl-5 space-y-0.5">
+            <ul className="text-[13px] text-ink-3 mt-3 list-disc pl-5 space-y-0.5">
               <li>원소의 화학종(산화수·화합물 형태)은 EDS로 확인되지 않았습니다.</li>
               <li>대상 원소 검출은 이 입자의 독성이나 인체 위해도를 뜻하지 않습니다.</li>
               {hazardRules.length > 0 && derived.target.detected.some((s) => hazardRules.find((r) => r.element_symbol === s && r.reference_name)) && (

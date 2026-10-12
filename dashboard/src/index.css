@@ -1,23 +1,28 @@
 @import "tailwindcss";
 
+/* 디자인: 건축 도면 같은 종이 배경 · 가는 선 격자 · 짙은 회색 잉크 · 주황빛 빨강 강조(Heron AI 참고).
+   가독성 원칙: 본문 15px·줄간격 1.65, 모든 글자색은 배경 대비 WCAG AA(4.5:1) 이상.
+   주황 #F15534 는 대비가 낮아(3.1:1) 선·면·아이콘에만 쓰고, 글자에는 #B5381A 를 쓴다. */
 @theme {
-  --font-sans: "IBM Plex Sans KR", "IBM Plex Sans", -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  --color-page: #f5f7f6;
-  --color-surface: #ffffff;
-  --color-surface-2: #f3f5f4;
-  --color-line: #dde3e1;
-  --color-line-2: #c8d0cd;
-  --color-ink: #131a18;
-  --color-ink-2: #4a5754;
-  --color-ink-3: #7a8784;
+  --color-page: #f3f1ec;        /* 종이 */
+  --color-surface: #fbfaf7;     /* 카드 */
+  --color-surface-2: #eeebe4;   /* 표 머리·보조 면 */
+  --color-line: #d9d5cc;        /* 가는 선 */
+  --color-line-2: #b9b4a9;      /* 강조 선·입력 테두리 */
+  --color-ink: #282828;         /* 본문 13:1 */
+  --color-ink-2: #4a4945;       /* 보조 8:1 */
+  --color-ink-3: #66645e;       /* 약한 보조 5.2:1 */
 
-  --color-accent: #0f6b62;
-  --color-accent-2: #0c5951;
-  --color-accent-soft: #e3f1ee;
+  --color-accent: #b5381a;      /* 강조 글자(5.3:1) */
+  --color-accent-2: #93290f;
+  --color-accent-soft: #fbe6dd;
+  --color-signal: #f15534;      /* 선·면 전용 주황 */
+  --color-block: #282828;       /* 짙은 블록 */
 
-  --color-demo: #8a5a00;
+  --color-demo: #7a4f00;
   --color-demo-soft: #fff4d6;
 
   --color-good: #0ca30c;
@@ -32,26 +37,54 @@ body {
   background: var(--color-page);
   color: var(--color-ink);
   font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 1.55;
+  font-size: 15px;
+  line-height: 1.65;
+  letter-spacing: -0.005em;
+  word-break: keep-all;          /* 한글 단어 중간에서 줄바꿈하지 않음 */
+  overflow-wrap: anywhere;
   -webkit-font-smoothing: antialiased;
 }
 .tnum { font-variant-numeric: tabular-nums; }
+.font-mono { letter-spacing: 0; }
+
+/* 작은 영문·숫자 라벨(섹션 번호, 단위 등) — 도면 표제란 느낌 */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+/* 도면 격자: 페이지 머리 영역에만 옅게 */
+.blueprint {
+  background-image:
+    linear-gradient(to right, rgba(40, 40, 40, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(40, 40, 40, 0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
 
 /* DEMO 표시: 색만이 아니라 빗금 + 텍스트로 구분 */
 .demo-stripes {
   background-image: repeating-linear-gradient(135deg, var(--color-demo-soft) 0 14px, #fde9b0 14px 28px);
 }
 
-table.data { width: 100%; border-collapse: collapse; }
-table.data th, table.data td { padding: 6px 10px; border-bottom: 1px solid var(--color-line); text-align: left; vertical-align: top; }
-table.data th { font-weight: 600; color: var(--color-ink-2); background: var(--color-surface-2); position: sticky; top: 0; z-index: 1; font-size: 12.5px; }
-table.data td.num, table.data th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: 12.5px; }
-table.data tbody tr:hover { background: #f7faf9; }
+table.data { width: 100%; border-collapse: collapse; font-size: 14px; }
+table.data th, table.data td { padding: 8px 12px; border-bottom: 1px solid var(--color-line); text-align: left; vertical-align: top; }
+table.data th {
+  font-weight: 600; color: var(--color-ink); background: var(--color-surface-2);
+  position: sticky; top: 0; z-index: 1; font-size: 13px; border-bottom: 1px solid var(--color-line-2);
+}
+table.data td.num, table.data th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.data td.num { font-family: var(--font-mono); font-size: 13.5px; }
+table.data tbody tr:hover { background: #f3efe6; }
 
 .recharts-wrapper text { font-family: var(--font-sans); }
-.recharts-cartesian-axis-tick-value { fill: #5f6b68; font-size: 12px; }
+.recharts-cartesian-axis-tick-value { fill: #4a4945; font-size: 13px; }
 .recharts-tooltip-wrapper { outline: none; }
+
+:focus-visible { outline: 2px solid var(--color-signal); outline-offset: 2px; }
 
 @media print {
   .no-print { display: none !important; }

@@ -26,16 +26,16 @@ export function Heatmap({ rows, cols, cell, cellW = 52, cellH = 28, rowLabelW = 
   return (
     <div className="relative overflow-auto" style={{ maxHeight }} onMouseLeave={() => setTip(null)}>
       <svg width={W} height={H} role="img" aria-label="히트맵">
-        <rect x={0} y={0} width={W} height={H} fill="#ffffff" />
+        <rect x={0} y={0} width={W} height={H} fill="#fbfaf7" />
         {cols.map((c, j) => (
-          <text key={c.key} x={rowLabelW + j * cellW + cellW / 2} y={17} textAnchor="middle" fontSize={12} fontWeight={600} fill="#4a5754">
+          <text key={c.key} x={rowLabelW + j * cellW + cellW / 2} y={17} textAnchor="middle" fontSize={13} fontWeight={600} fill="#4a4945">
             {c.label}
           </text>
         ))}
         {rows.map((r, i) => (
           <g key={r.key} transform={`translate(0, ${headH + i * cellH})`}>
             <text
-              x={rowLabelW - 8} y={cellH / 2 + 4} textAnchor="end" fontSize={12} fill={onRowClick ? "#0f6b62" : "#131a18"}
+              x={rowLabelW - 8} y={cellH / 2 + 4} textAnchor="end" fontSize={13} fill={onRowClick ? "#b5381a" : "#282828"}
               style={{ cursor: onRowClick ? "pointer" : "default" }} onClick={() => onRowClick?.(r.key)}
             >
               {r.label.length > 20 ? r.label.slice(0, 19) + "…" : r.label}
@@ -43,7 +43,7 @@ export function Heatmap({ rows, cols, cell, cellW = 52, cellH = 28, rowLabelW = 
             {cols.map((c, j) => {
               const v = cell(r.key, c.key);
               const x = rowLabelW + j * cellW;
-              if (!v) return <rect key={c.key} x={x + 1} y={1} width={cellW - 2} height={cellH - 2} fill="#fafbfa" stroke="#eef1ef" />;
+              if (!v) return <rect key={c.key} x={x + 1} y={1} width={cellW - 2} height={cellH - 2} fill="#f7f5f0" stroke="#e6e2d9" />;
               return (
                 <g
                   key={c.key}
@@ -54,8 +54,8 @@ export function Heatmap({ rows, cols, cell, cellW = 52, cellH = 28, rowLabelW = 
                     setTip({ x: e.clientX - box.left + 12, y: e.clientY - box.top + 12, text: v.tooltip });
                   }}
                 >
-                  <rect x={x + 1} y={1} width={cellW - 2} height={cellH - 2} rx={3} fill={v.color} />
-                  <text x={x + cellW / 2} y={cellH / 2 + 4} textAnchor="middle" fontSize={11} fill={v.dark ? "#ffffff" : "#131a18"} className="tnum">
+                  <rect x={x + 1} y={1} width={cellW - 2} height={cellH - 2} rx={1} fill={v.color} />
+                  <text x={x + cellW / 2} y={cellH / 2 + 4} textAnchor="middle" fontSize={12} fill={v.dark ? "#ffffff" : "#282828"} className="tnum">
                     {v.text}
                   </text>
                 </g>
@@ -65,7 +65,7 @@ export function Heatmap({ rows, cols, cell, cellW = 52, cellH = 28, rowLabelW = 
         ))}
       </svg>
       {tip && (
-        <div className="absolute z-10 pointer-events-none bg-ink text-white text-[12px] rounded px-2 py-1 max-w-[280px] whitespace-pre-line shadow" style={{ left: tip.x, top: tip.y }}>
+        <div className="absolute z-10 pointer-events-none bg-ink text-white text-[13px] rounded px-2 py-1 max-w-[280px] whitespace-pre-line shadow" style={{ left: tip.x, top: tip.y }}>
           {tip.text}
         </div>
       )}

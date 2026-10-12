@@ -32,10 +32,10 @@ async function svgToPng(container: HTMLElement, title: string, subtitle: string,
   ctx.scale(scale, scale);
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, c.width, c.height);
-  ctx.fillStyle = "#131a18";
+  ctx.fillStyle = "#282828";
   ctx.font = "600 15px 'IBM Plex Sans KR', 'Malgun Gothic', sans-serif";
   ctx.fillText(title, pad, 24);
-  ctx.fillStyle = "#4a5754";
+  ctx.fillStyle = "#4a4945";
   ctx.font = "12px 'IBM Plex Sans KR', 'Malgun Gothic', sans-serif";
   ctx.fillText(subtitle.slice(0, 160), pad, 43);
   if (demo) {
@@ -85,11 +85,11 @@ export function ChartCard({ title, subtitle, children, table, actions, className
         <>
           {actions}
           {table && (
-            <button className="text-[12px] text-ink-2 hover:text-ink px-1.5 py-0.5 rounded hover:bg-surface-2" onClick={() => setShowTable(!showTable)} aria-pressed={showTable}>
+            <button className="text-[13px] text-ink-2 hover:text-ink px-1.5 py-0.5 rounded hover:bg-surface-2" onClick={() => setShowTable(!showTable)} aria-pressed={showTable}>
               {showTable ? "그래프" : "표"}
             </button>
           )}
-          <button className="text-[12px] text-ink-2 hover:text-ink px-1.5 py-0.5 rounded hover:bg-surface-2" onClick={save} title="그래프를 PNG로 저장">
+          <button className="text-[13px] text-ink-2 hover:text-ink px-1.5 py-0.5 rounded hover:bg-surface-2" onClick={save} title="그래프를 PNG로 저장">
             PNG
           </button>
         </>

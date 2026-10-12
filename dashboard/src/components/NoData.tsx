@@ -9,7 +9,7 @@ export function NoData({ what = "분석" }: { what?: string }) {
       title={`${what}할 데이터가 없습니다`}
       action={
         <>
-          <a href={hrefFor({ page: "data" })} className="inline-flex items-center border rounded-md text-[13px] px-3 py-1.5 font-medium bg-accent border-accent text-white hover:bg-accent-2">데이터 업로드</a>
+          <a href={hrefFor({ page: "data" })} className="inline-flex items-center border rounded-[3px] text-[14px] px-3 py-1.5 font-medium bg-block border-block text-white hover:bg-[#3d3b37]">데이터 업로드</a>
           <Button onClick={loadDemo} disabled={!!busy}>DEMO(가상) 데이터로 화면 확인</Button>
         </>
       }
