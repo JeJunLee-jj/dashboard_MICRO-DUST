@@ -52,7 +52,7 @@ export function HazardPage() {
       <FilterBar />
       <Notice kind="warning">{HAZARD_DISCLAIMER}</Notice>
 
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 my-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 my-4">
         <Kpi label="전체 분석 입자 수" value={hz.totalParticles} unit="개" demo={demo} />
         <Kpi label="유효 EDS 분석 입자" value={hz.validEds} unit="개" demo={demo} detail={`제외 ${hz.totalParticles - hz.validEds}개(EDS 없음·결측·사용자 제외 등)`} />
         <Kpi label="대상 원소 1개 이상 검출 입자" value={hz.positive} unit="개" demo={demo} detail={`미검출 ${hz.negative} · 판정 불가 ${hz.undetermined}`} onClick={() => { setFilters((f) => ({ ...f, targetStatus: "positive" })); navigate({ page: "particles" }); }} />

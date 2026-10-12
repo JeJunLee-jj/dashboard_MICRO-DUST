@@ -62,7 +62,7 @@ export function Kpi({ label, value, unit, detail, demo, onClick }: { label: stri
         <span className="text-[14px] text-ink-2 font-semibold leading-snug">{label}</span>
         {demo && <DemoTag small />}
       </div>
-      <div className="text-[34px] font-bold leading-none mt-3 tnum tracking-[-0.02em] text-ink">
+      <div className="text-[clamp(26px,2.3vw,34px)] font-bold leading-none mt-3 tnum tracking-[-0.02em] text-ink whitespace-nowrap">
         {value}
         {unit && <small className="text-[15px] font-semibold text-ink-2 ml-1 tracking-normal">{unit}</small>}
       </div>

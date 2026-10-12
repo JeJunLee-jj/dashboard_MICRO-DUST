@@ -63,7 +63,7 @@ export function OverviewPage() {
       />
       <FilterBar />
 
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mb-4">
         <Kpi label="총 분석 입자 수" value={kpi.total.toLocaleString()} unit="개" demo={demo} detail="메타데이터 또는 EDS가 있는 입자" onClick={() => navigate({ page: "particles" })} />
         <Kpi label="유효 EDS 분석 입자 수" value={kpi.validEds.toLocaleString()} unit="개" demo={demo} detail={<>전체의 <Pct k={kpi.validEds} n={kpi.total} /> · EDS 기록이 있고 제외 조건에 해당하지 않음</>} />
         <Kpi label="검출된 원소 종류 수" value={kpi.elementKinds} unit="종" demo={demo} detail="유효 입자에서 '검출'로 판정된 원소" onClick={() => navigate({ page: "eds" })} />
