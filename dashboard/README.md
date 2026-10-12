@@ -62,7 +62,7 @@ npm run dev          # 개발 서버 → http://localhost:5173
 등록·분석한 데이터는 각자의 브라우저에만 저장됩니다. 팀원에게 같은 결과를 보여주려면 **백업 파일을 배포판에 넣어** GitHub에 올립니다.
 
 1. 대시보드 **데이터 업로드 → 데이터 보관 → 백업 파일 저장**으로 `SEM-EDS_backup_날짜.json`을 받습니다.
-2. 이 폴더에서 아래 명령을 실행합니다. 백업 파일이 `public/shared-data/dataset.json`으로 복사됩니다. DEMO 데이터 백업은 거부합니다.
+2. 이 폴더에서 아래 명령을 실행합니다. 백업 파일이 `public/shared-data/dataset.json`으로 복사됩니다. DEMO 데이터 백업은 거부하며, 흑백 SEM 이미지는 픽셀 값이 같은지 확인한 뒤 8비트 회색조 PNG로 **무손실** 변환해 크기를 줄입니다(입자 20개 기준 67 MB → 30 MB).
 
    ```bash
    npm run shared:set -- "C:\Users\...\Downloads\SEM-EDS_backup_2026-10-12.json"
