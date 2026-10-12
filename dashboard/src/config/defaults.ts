@@ -2,6 +2,7 @@
    모든 값은 설정 화면에서 바꿀 수 있고, CSV/JSON으로 내보내고 다시 불러올 수 있다. */
 import type { AnalysisSettings, HazardRule } from "../lib/types";
 import { DEFAULT_TARGET_ELEMENTS } from "../lib/elements";
+import { HEALTH_INFO } from "./healthInfo";
 
 export const DEFAULT_SETTINGS: AnalysisSettings = {
   targetElements: [...DEFAULT_TARGET_ELEMENTS],
@@ -25,7 +26,7 @@ const IARC_URL = "https://monographs.iarc.who.int/list-of-classifications/";
  * - 근거를 입력하지 않은 원소는 "평가 대상(범주 미입력)"으로 둔다. 임의의 위험 등급을 만들지 않는다.
  * - 사용 전 원문(IARC 분류 목록)을 확인할 것.
  */
-export const DEFAULT_HAZARD_RULES: HazardRule[] = [
+const BASE_HAZARD_RULES: HazardRule[] = [
   {
     element_symbol: "As",
     assessment_category: "IARC Group 1 (무기 비소 화합물)",
@@ -90,3 +91,42 @@ export const DEFAULT_HAZARD_RULES: HazardRule[] = [
     classification_note: "초기 검토 대상 원소. 평가 기준과 출처를 입력하기 전에는 범주를 부여하지 않음.",
   })),
 ];
+
+/** 대상 원소 외에 실측 데이터에 자주 나오는 참고 원소(위해성 평가 대상 아님) */
+const REFERENCE_ELEMENT_RULES: HazardRule[] = [
+  {
+    element_symbol: "Si",
+    assessment_category: "참고 원소 — IARC Group 1은 결정형 실리카에 한함",
+    reference_name: "IARC Monographs Vol. 100C — Silica dust, crystalline",
+    reference_year: 2012,
+    reference_url: IARC_URL,
+    applicable_condition: "결정형 실리카(석영·크리스토발라이트)에만 해당. EDS로는 결정형·비정질·규산염을 구분할 수 없음.",
+    classification_note: "Si 검출이 결정형 실리카 존재를 뜻하지 않음.",
+  },
+  {
+    element_symbol: "Mo",
+    assessment_category: "참고 원소 — IARC Group 2B는 삼산화몰리브덴에 한함",
+    reference_name: "IARC Monographs Vol. 118 — Molybdenum trioxide",
+    reference_year: 2018,
+    reference_url: IARC_URL,
+    applicable_condition: "삼산화몰리브덴(MoO₃)에만 해당. EDS로는 화합물을 구분할 수 없음.",
+    classification_note: "사용 전 원문 확인.",
+  },
+  ...(["Al", "Sr"] as const).map((s) => ({
+    element_symbol: s,
+    assessment_category: "참고 원소(범주 미입력)",
+    reference_name: null,
+    reference_year: null,
+    reference_url: null,
+    applicable_condition: null,
+    classification_note: "위해성 평가 대상이 아닌 참고 원소.",
+  })),
+];
+
+/** 위해성 평가 규칙 기본값 = 분류 근거(위) + 건강 영향 참고 정보(config/healthInfo.ts) */
+export const DEFAULT_HAZARD_RULES: HazardRule[] = [...BASE_HAZARD_RULES, ...REFERENCE_ELEMENT_RULES].map((r) => ({
+  ...r,
+  health_effects: HEALTH_INFO[r.element_symbol]?.health_effects ?? null,
+  target_organs: HEALTH_INFO[r.element_symbol]?.target_organs ?? null,
+  health_references: HEALTH_INFO[r.element_symbol]?.health_references ?? null,
+}));

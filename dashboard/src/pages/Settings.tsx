@@ -163,14 +163,14 @@ export function SettingsPage() {
         <Notice kind="info">기본값에는 출처를 확인할 수 있는 IARC 발암성 분류만 넣었고, 나머지 원소는 '평가 대상(범주 미입력)'입니다. IARC 분류는 <b>화학종</b>(예: 6가 크롬 화합물) 기준이며 EDS는 화학종을 구분하지 못합니다. 사용 전 원문을 확인하세요.</Notice>
         <div className="overflow-auto mt-3">
           <table className="data">
-            <thead><tr><th>원소</th><th>평가 범주</th><th>근거(reference_name)</th><th>연도</th><th>URL</th><th>적용 조건</th><th>비고</th><th></th></tr></thead>
+            <thead><tr><th>원소</th><th>평가 범주</th><th>근거(reference_name)</th><th>연도</th><th>URL</th><th>적용 조건</th><th>비고</th><th>표적 장기</th><th>노출 시 건강 영향(비우면 기본 참고 정보)</th><th>건강 영향 출처("이름 | URL ; …")</th><th></th></tr></thead>
             <tbody>
               {hazardRules.map((r, i) => (
                 <tr key={i}>
                   <td className="font-semibold">{r.element_symbol}</td>
-                  {(["assessment_category", "reference_name", "reference_year", "reference_url", "applicable_condition", "classification_note"] as const).map((k) => (
+                  {(["assessment_category", "reference_name", "reference_year", "reference_url", "applicable_condition", "classification_note", "target_organs", "health_effects", "health_references"] as const).map((k) => (
                     <td key={k}>
-                      <input className={`border border-line rounded px-1.5 py-0.5 text-[12px] w-full ${k === "reference_year" ? "min-w-[60px]" : "min-w-[140px]"}`} value={r[k] ?? ""}
+                      <input className={`border border-line rounded px-1.5 py-0.5 text-[12px] w-full ${k === "reference_year" ? "min-w-[60px]" : k === "health_effects" || k === "health_references" ? "min-w-[260px]" : "min-w-[140px]"}`} value={r[k] ?? ""}
                         onChange={(e) => updateRule(i, { [k]: k === "reference_year" ? (e.target.value ? Number(e.target.value) || null : null) : e.target.value || null } as Partial<HazardRule>)} />
                     </td>
                   ))}
@@ -180,8 +180,8 @@ export function SettingsPage() {
             </tbody>
           </table>
           <div className="mt-2 flex gap-2">
-            {settings.targetElements.filter((e) => !hazardRules.find((r) => r.element_symbol === e)).map((e) => (
-              <Button small key={e} onClick={() => setHazardRules([...hazardRules, { element_symbol: e, assessment_category: "평가 대상(범주 미입력)", reference_name: null, reference_year: null, reference_url: null, applicable_condition: null, classification_note: null }])}>+ {e} 규칙 행</Button>
+            {[...new Set([...settings.targetElements, ...DEFAULT_HAZARD_RULES.map((r) => r.element_symbol)])].filter((e) => !hazardRules.find((r) => r.element_symbol === e)).map((e) => (
+              <Button small key={e} onClick={() => setHazardRules([...hazardRules, DEFAULT_HAZARD_RULES.find((r) => r.element_symbol === e) ?? { element_symbol: e, assessment_category: "평가 대상(범주 미입력)", reference_name: null, reference_year: null, reference_url: null, applicable_condition: null, classification_note: null }])}>+ {e} 규칙 행{DEFAULT_HAZARD_RULES.some((r) => r.element_symbol === e) ? "(기본값)" : ""}</Button>
             ))}
           </div>
         </div>

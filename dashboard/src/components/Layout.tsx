@@ -20,7 +20,8 @@ function useOfflineLink(): string | null {
     if (import.meta.env.VITE_OFFLINE || location.protocol === "file:") return;
     const url = `${import.meta.env.BASE_URL}offline.html`;
     fetch(url, { method: "HEAD" })
-      .then((r) => r.ok && (r.headers.get("content-type") ?? "").includes("html") && Number(r.headers.get("content-length") ?? "100000") > 50000 && setHref(url))
+      // 크기 정보가 있고 충분히 큰 HTML일 때만(개발 서버는 없는 경로에도 index.html을 돌려주므로 구분)
+      .then((r) => r.ok && (r.headers.get("content-type") ?? "").includes("html") && Number(r.headers.get("content-length") ?? "0") > 500_000 && setHref(url))
       .catch(() => undefined);
   }, []);
   return href;

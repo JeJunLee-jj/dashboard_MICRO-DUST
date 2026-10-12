@@ -102,6 +102,12 @@ export interface HazardRule {
   reference_url: string | null;
   applicable_condition: string | null;
   classification_note: string | null;
+  /** 노출 시 알려진 건강 영향(문헌 요약) — 비우면 기본 참고 정보(config/healthInfo.ts) 사용 */
+  health_effects?: string | null;
+  /** 주요 표적 장기 */
+  target_organs?: string | null;
+  /** 건강 영향 출처: "이름 | URL ; 이름 | URL" */
+  health_references?: string | null;
 }
 
 /** 선택적: 대기 중 PM 측정값. 입자 분석 결과와 섞어서 계산하지 않고, 보고된 값으로만 표시한다. */

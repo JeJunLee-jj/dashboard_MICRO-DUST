@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from "recharts";
 import { useStore, hrefFor } from "../state/store";
 import { FilterBar } from "../components/FilterBar";
+import { ElementHazardExplorer } from "../components/ElementHazardExplorer";
 import { NoData } from "../components/NoData";
 import { ChartCard } from "../components/ChartCard";
 import { Card, Formula, Kpi, Legend, Notice, PageHeader, Pct, Segmented, fmtNum, NotAvailable } from "../components/ui";
@@ -71,6 +72,8 @@ export function HazardPage() {
           정량한계 미만은 {settings.belowLoqCountsAsDetected ? "검출로 셉니다" : "검출로 세지 않습니다"}. 파일에 행이 없는 원소는 {settings.absentElementPolicy === "not_detected" ? "미검출로 간주합니다(가정)" : "결측(미분석)으로 봅니다"}. (설정에서 변경)
         </Formula>
       </div>
+
+      <ElementHazardExplorer />
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
         <ChartCard title="대상 원소별 검출 상태 구성" subtitle="유효 입자 기준 · 상태별 입자 수 비율(100% 누적) · 막대를 누르면 그 원소가 검출된 입자 목록"

@@ -2,15 +2,14 @@ import { useMemo, useState } from "react";
 import { useStore, hrefFor } from "../state/store";
 import { Card, DemoTag, LevelBadge, Notice, StatusBadge, TargetBadge, fmtNum, Button } from "../components/ui";
 import { ImageViewer } from "../components/ImageViewer";
+import { CompositionBar } from "../components/CompositionBar";
 import { elementStatus } from "../lib/join";
 import { particleTargetResult } from "../lib/hazard";
 import { classifyParticleType, sourceCandidates } from "../lib/rules";
-import { topElements } from "../lib/composition";
 import { MORPHOLOGY_CLASSES, morphologyLabel } from "../lib/morphology";
 import { elementNameKo, atomicOrder } from "../lib/elements";
-import { elementColor, OTHER_COLOR } from "../lib/palette";
 import { measureImage, type ShapeMeasurement, type SegmentParams, SHAPE_THRESHOLDS, DEFAULT_SEGMENT } from "../lib/image/measure";
-import type { Basis, MorphologyClass, Particle } from "../lib/types";
+import type { Basis, MorphologyClass } from "../lib/types";
 
 const SOURCE_LABEL: Record<string, string> = {
   explicit: "파일에 명시",
@@ -311,24 +310,6 @@ export function ParticleDetail({ particleKey }: { particleKey: string }) {
             </ul>
           </Card>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function CompositionBar({ p, basis, order }: { p: Particle; basis: Basis; order: string[] }) {
-  const top = topElements(p, basis, 5);
-  const all = topElements(p, basis, 99);
-  const total = all.reduce((a, b) => a + b.value, 0);
-  const label = basis === "wt" ? "wt%(중량%)" : "at%(원자%)";
-  if (!all.length) return <div className="text-[12px] text-ink-3">{label}: 정량값 없음(환산해 만들지 않음)</div>;
-  return (
-    <div>
-      <div className="flex items-center justify-between text-[12px] text-ink-2 mb-1"><span>{label} 조성 · TOP 5: {top.map((t) => `${t.symbol} ${t.value.toFixed(1)}`).join(", ")}</span><span className="tnum text-ink-3">합 {total.toFixed(1)}</span></div>
-      <div className="flex h-4 rounded overflow-hidden border border-line" role="img" aria-label={`${label} 조성 막대`}>
-        {all.map((e) => (
-          <div key={e.symbol} title={`${e.symbol} ${e.value.toFixed(2)} ${basis}%`} style={{ width: `${(e.value / Math.max(total, 100)) * 100}%`, background: order.includes(e.symbol) ? elementColor(e.symbol, order) : OTHER_COLOR, borderRight: "2px solid #fff" }} />
-        ))}
       </div>
     </div>
   );

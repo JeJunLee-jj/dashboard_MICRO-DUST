@@ -37,6 +37,9 @@ export function parseHazardRulesTable(table: Table): { rules: HazardRule[]; issu
       reference_url: str(r.reference_url),
       applicable_condition: str(r.applicable_condition),
       classification_note: str(r.classification_note),
+      health_effects: str(r.health_effects),
+      target_organs: str(r.target_organs),
+      health_references: str(r.health_references),
     });
   });
   return { rules, issues };

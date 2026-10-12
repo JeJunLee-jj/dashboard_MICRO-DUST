@@ -58,6 +58,9 @@ const HEADER_ALIASES: Record<string, string[]> = {
   reference_url: ["reference_url", "url", "link"],
   applicable_condition: ["applicable_condition", "condition", "적용조건"],
   classification_note: ["classification_note", "비고사항", "분류메모"],
+  health_effects: ["health_effects", "건강영향", "건강_영향"],
+  target_organs: ["target_organs", "표적장기", "표적_장기"],
+  health_references: ["health_references", "건강영향출처", "건강영향_출처"],
 
   pm25: ["pm25", "pm2.5", "pm2_5", "pm_2.5", "초미세먼지"],
   pm10: ["pm10", "pm_10", "미세먼지"],
