@@ -1,15 +1,21 @@
 /* 지하상가 평면 지도 — 위치별 기준 해당 비율을 원(마커)으로 표시.
-   - 평면도 이미지를 올리지 않으면 모식도(구역 배치·거리는 실제와 다름)를 그린다.
-   - '위치 옮기기'를 켜면 마커를 끌어 실제 평면도 위 위치에 맞출 수 있다(좌표는 설정·백업에 저장). */
+   - 기본 배경은 '강남역 지하도상가 배치도'이며, 마커는 채취 점포 위치에 놓인다(sites.ts 좌표).
+   - 다른 평면도를 올리면 그 위에 표시하고, '마커 위치 옮기기'로 끌어 맞출 수 있다(좌표는 설정·백업에 저장).
+   - 지도 위에는 원(비율)과 이름표만 두고, 기준별 세부 비율은 지도 아래 카드(SiteCards)로 보여준다. */
 import { useRef, useState, type PointerEvent as RPointerEvent } from "react";
 import type { GroupStats, Rate, SimSettings } from "../lib/criteria";
 import { seqColor } from "../lib/palette";
+import floorPlanUrl from "../assets/gangnam-floorplan.webp";
 
 export type MapMetric = "shape" | "comp" | "both";
 
 export const METRIC_LABEL: Record<MapMetric, string> = { shape: "형상 기준", comp: "조성 기준", both: "두 기준 모두" };
+export const METRIC_COLOR: Record<MapMetric, string> = { shape: "#3d3b37", comp: "#d4552f", both: "#2a78d6" };
 
-const pick = (g: GroupStats, m: MapMetric): Rate => (m === "shape" ? g.shape : m === "comp" ? g.comp : g.both);
+/** 기본 배경: 강남역 지하도상가 배치도(2000×1414) */
+export const DEFAULT_PLAN = { url: floorPlanUrl, name: "강남역 지하도상가 배치도", w: 2000, h: 1414 };
+
+export const pickRate = (g: GroupStats, m: MapMetric): Rate => (m === "shape" ? g.shape : m === "comp" ? g.comp : g.both);
 const f0 = (v: number | null) => (v == null ? "—" : `${Math.round(v)}%`);
 
 export function SiteMap({ sites, sim, setSim, metric, selected, onSelect, editing }: {
@@ -23,9 +29,9 @@ export function SiteMap({ sites, sim, setSim, metric, selected, onSelect, editin
 }) {
   const svg = useRef<SVGSVGElement>(null);
   const [drag, setDrag] = useState<string | null>(null);
-  const plan = sim.floorPlan;
+  const plan = sim.floorPlan ?? DEFAULT_PLAN;
   const W = 1000;
-  const H = plan ? Math.round((W * plan.h) / plan.w) : 470;
+  const H = Math.round((W * plan.h) / plan.w);
   const maxN = Math.max(1, ...sites.map((g) => g.inRange.length));
 
   const toLocal = (e: RPointerEvent) => {
@@ -41,7 +47,7 @@ export function SiteMap({ sites, sim, setSim, metric, selected, onSelect, editin
     <svg
       ref={svg}
       viewBox={`0 0 ${W} ${H}`}
-      className={`w-full h-auto select-none bg-[#faf9f6] border border-line rounded-[3px] ${editing ? "cursor-crosshair touch-none" : ""}`}
+      className={`w-full h-auto select-none bg-white border border-line rounded-[3px] ${editing ? "cursor-crosshair touch-none" : ""}`}
       role="img"
       aria-label="지하상가 위치별 기준 해당 비율 지도"
       onPointerMove={(e) => {
@@ -51,23 +57,25 @@ export function SiteMap({ sites, sim, setSim, metric, selected, onSelect, editin
       }}
       onPointerUp={() => setDrag(null)}
       onPointerLeave={() => setDrag(null)}
-      onClick={(e) => { if (e.target === svg.current) onSelect(null); }}
+      onClick={(e) => { if (e.target === svg.current || (e.target as Element).tagName === "image" || (e.target as Element).tagName === "rect") onSelect(null); }}
     >
-      {plan ? <image href={plan.url} x={0} y={0} width={W} height={H} preserveAspectRatio="xMidYMid meet" opacity={0.85} /> : <Schematic />}
+      <image href={plan.url} x={0} y={0} width={W} height={H} preserveAspectRatio="xMidYMid meet" />
+      {/* 배치도 색을 옅게 덮어 마커가 눈에 띄게 */}
+      <rect x={0} y={0} width={W} height={H} fill="#ffffff" opacity={0.5} />
 
       {sites.map((g) => {
         const s = g.site!;
         const pos = sim.positions[s.id] ?? { x: s.x, y: s.y };
         const cx = pos.x * W, cy = pos.y * H;
-        const r = pick(g, metric);
+        const r = pickRate(g, metric);
         const n = g.inRange.length;
-        const rad = 16 + 18 * Math.sqrt(n / maxN);
+        const rad = 15 + 13 * Math.sqrt(n / maxN);
         const empty = r.n === 0;
         const fill = empty ? "#ffffff" : seqColor((r.pct ?? 0) / 100);
         const dark = !empty && (r.pct ?? 0) >= 45;
         const isSel = selected === s.id;
-        const labelBelow = pos.y < 0.5;
-        const ly = labelBelow ? cy + rad + 10 : cy - rad - 70;
+        const tag = `${s.short} ${s.zone}`;
+        const tagW = 15 + tag.length * 10.5;
         return (
           <g
             key={s.id}
@@ -80,68 +88,57 @@ export function SiteMap({ sites, sim, setSim, metric, selected, onSelect, editin
             style={{ cursor: editing ? "grab" : "pointer" }}
           >
             <title>{`${s.label}\n분석 대상 ${n}개\n형상 ${g.shape.k}/${g.shape.n} · 조성 ${g.comp.k}/${g.comp.n} · 두 기준 ${g.both.k}/${g.both.n}`}</title>
-            {isSel && <circle cx={cx} cy={cy} r={rad + 7} fill="none" stroke="#282828" strokeWidth={2} />}
-            <circle cx={cx} cy={cy} r={rad} fill={fill} stroke={empty ? "#8a877f" : "#73290f"} strokeWidth={1.5} strokeDasharray={empty ? "4 3" : undefined} />
-            <text x={cx} y={cy + 6} textAnchor="middle" fontSize={empty ? 13 : 18} fontWeight={700} fill={dark ? "#fff" : "#282828"} className="tnum">
+            {isSel && <circle cx={cx} cy={cy} r={rad + 6} fill="none" stroke="#282828" strokeWidth={2.5} />}
+            <circle cx={cx} cy={cy} r={rad} fill={fill} stroke={empty ? "#66645e" : "#73290f"} strokeWidth={2} strokeDasharray={empty ? "4 3" : undefined} />
+            <text x={cx} y={cy + 6} textAnchor="middle" fontSize={empty ? 12 : 17} fontWeight={700} fill={dark ? "#fff" : "#282828"} className="tnum">
               {empty ? "없음" : f0(r.pct)}
             </text>
-            <g transform={`translate(${Math.min(W - 186, Math.max(6, cx - 90))},${Math.min(H - 76, Math.max(4, ly))})`}>
-              <rect width={180} height={66} rx={3} fill="#ffffff" stroke={isSel ? "#282828" : "#d6d2c8"} />
-              <text x={9} y={19} fontSize={14.5} fontWeight={700} fill="#282828">{s.short} <tspan fontSize={12.5} fontWeight={500} fill="#66645e">{s.zone} · n={n}</tspan></text>
-              <MiniBar y={27} label="형상" r={g.shape} color="#3d3b37" />
-              <MiniBar y={40} label="조성" r={g.comp} color="#d4552f" />
-              <MiniBar y={53} label="둘 다" r={g.both} color="#2a78d6" />
+            {/* 이름표 */}
+            <g transform={`translate(${cx - tagW / 2},${cy - rad - 26})`}>
+              <rect width={tagW} height={21} rx={2} fill={isSel ? "#282828" : "#ffffff"} stroke="#282828" strokeWidth={1.2} />
+              <text x={tagW / 2} y={15} textAnchor="middle" fontSize={13.5} fontWeight={700} fill={isSel ? "#ffffff" : "#282828"}>{tag}</text>
             </g>
+            <text x={cx} y={cy + rad + 15} textAnchor="middle" fontSize={12.5} fontWeight={600} fill="#282828" stroke="#ffffff" strokeWidth={3} paintOrder="stroke" className="tnum">
+              {r.n ? `${r.k}/${r.n}` : `n=${n}`}
+            </text>
           </g>
         );
       })}
       {editing && (
-        <text x={W - 12} y={H - 10} textAnchor="end" fontSize={13} fill="#b5381a" fontWeight={600}>마커를 끌어 위치를 옮기세요</text>
+        <text x={W - 12} y={H - 12} textAnchor="end" fontSize={14} fill="#b5381a" fontWeight={700} stroke="#fff" strokeWidth={3} paintOrder="stroke">마커를 끌어 위치를 옮기세요</text>
       )}
     </svg>
   );
 }
 
-function MiniBar({ y, label, r, color }: { y: number; label: string; r: Rate; color: string }) {
-  const w = 82;
+/** 지도 아래: 위치별 세 기준 비율 카드 */
+export function SiteCards({ sites, selected, onSelect }: { sites: GroupStats[]; selected: string | null; onSelect: (id: string | null) => void }) {
   return (
-    <g transform={`translate(9,${y})`}>
-      <text x={0} y={9} fontSize={11.5} fill="#4a4945">{label}</text>
-      <rect x={34} y={2} width={w} height={8} fill="#efece5" />
-      {r.pct != null && <rect x={34} y={2} width={(w * r.pct) / 100} height={8} fill={color} />}
-      <text x={34 + w + 5} y={9.5} fontSize={11.5} fill="#282828" className="tnum">{r.n ? `${Math.round(r.pct ?? 0)}% (${r.k}/${r.n})` : "—"}</text>
-    </g>
-  );
-}
-
-/** 모식도: 지하상가 통로와 구역(배치·거리는 실제와 다름) */
-function Schematic() {
-  const zones = [
-    { x: 40, w: 230, label: "B구역" },
-    { x: 290, w: 230, label: "D구역" },
-    { x: 540, w: 270, label: "E구역" },
-    { x: 830, w: 130, label: "F구역" },
-  ];
-  return (
-    <g>
-      <defs>
-        <pattern id="sm-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-          <path d="M20 0H0V20" fill="none" stroke="#ebe8e1" strokeWidth="1" />
-        </pattern>
-      </defs>
-      <rect width="1000" height="470" fill="url(#sm-grid)" />
-      {/* 통로 */}
-      <rect x={30} y={190} width={940} height={110} fill="#f1eee7" stroke="#b9b4a9" strokeWidth={1.5} />
-      {zones.map((z) => (
-        <g key={z.label}>
-          <rect x={z.x} y={200} width={z.w} height={90} fill="#ffffff" stroke="#d6d2c8" />
-          <text x={z.x + 8} y={284} fontSize={13} fill="#66645e" fontFamily="Geist Mono, monospace">{z.label}</text>
-        </g>
-      ))}
-      {/* 지하철 연결부 */}
-      <rect x={350} y={300} width={110} height={36} fill="#3d3b37" />
-      <text x={405} y={323} textAnchor="middle" fontSize={13} fill="#fff" fontWeight={600}>2호선 강남역</text>
-      <text x={18} y={26} fontSize={13} fill="#66645e">강남역 지하상가 — 모식도(구역 배치·거리는 실제와 다름)</text>
-    </g>
+    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2 mt-3">
+      {sites.map((g) => {
+        const s = g.site!;
+        const isSel = selected === s.id;
+        return (
+          <button key={s.id} onClick={() => onSelect(isSel ? null : s.id)}
+            className={`text-left border rounded-[3px] px-3 py-2 ${isSel ? "border-ink bg-accent-soft" : "border-line bg-surface hover:border-ink"}`}>
+            <div className="text-[14px] font-semibold leading-tight">{s.short} <span className="text-[12.5px] font-normal text-ink-3">{s.zone} · 대상 {g.inRange.length}개</span></div>
+            <div className="mt-1.5 space-y-1">
+              {(["shape", "comp", "both"] as MapMetric[]).map((m) => {
+                const r = pickRate(g, m);
+                return (
+                  <div key={m} className="flex items-center gap-1.5 text-[12.5px]">
+                    <span className="w-9 text-ink-2 shrink-0">{m === "shape" ? "형상" : m === "comp" ? "조성" : "둘 다"}</span>
+                    <span className="flex-1 h-2 bg-[#efece5] relative">
+                      {r.pct != null && <span className="absolute inset-y-0 left-0" style={{ width: `${r.pct}%`, background: METRIC_COLOR[m] }} />}
+                    </span>
+                    <span className="tnum w-[74px] text-right shrink-0">{r.n ? <>{Math.round(r.pct ?? 0)}% <span className="text-ink-3">({r.k}/{r.n})</span></> : "—"}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </button>
+        );
+      })}
+    </div>
   );
 }

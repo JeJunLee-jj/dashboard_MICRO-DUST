@@ -24,6 +24,8 @@ export interface CriteriaConfig {
   elements: string[];
   /** 원소별 wt% 하한(0 또는 없음 = 검출만 보면 됨) */
   minWt: Record<string, number>;
+  /** 고른 원소 중 몇 개 이상이 함께 검출되어야 하는지(1 = 하나 이상) */
+  minHits: number;
 }
 
 export const DEFAULT_CRITERIA: CriteriaConfig = {
@@ -35,6 +37,7 @@ export const DEFAULT_CRITERIA: CriteriaConfig = {
   arCompare: 2.0,
   elements: [...MORENO_ELEMENTS],
   minWt: {},
+  minHits: 1,
 };
 
 type Tri = boolean | null;
@@ -69,7 +72,7 @@ function and(a: Tri, b: Tri): Tri {
   return null;
 }
 
-export function evaluateComposition(p: Particle, cfg: Pick<CriteriaConfig, "elements" | "minWt">, settings: AnalysisSettings): { comp: Tri; hits: string[]; unknown: string[] } {
+export function evaluateComposition(p: Particle, cfg: Pick<CriteriaConfig, "elements" | "minWt" | "minHits">, settings: AnalysisSettings): { comp: Tri; hits: string[]; unknown: string[] } {
   if (!p.edsValid || !cfg.elements.length) return { comp: null, hits: [], unknown: [...cfg.elements] };
   const hits: string[] = [], unknown: string[] = [];
   for (const el of cfg.elements) {
@@ -84,7 +87,9 @@ export function evaluateComposition(p: Particle, cfg: Pick<CriteriaConfig, "elem
     }
     hits.push(el);
   }
-  return { comp: hits.length ? true : unknown.length ? null : false, hits, unknown };
+  const need = Math.max(1, Math.min(cfg.minHits ?? 1, cfg.elements.length));
+  // 판정 못 한 원소가 모두 검출이었다고 해도 모자라면 '해당 안 됨', 그렇지 않으면 판정 불가
+  return { comp: hits.length >= need ? true : hits.length + unknown.length < need ? false : null, hits, unknown };
 }
 
 export function evaluateParticle(p: Particle, cfg: CriteriaConfig, settings: AnalysisSettings): ParticleEval {
@@ -213,8 +218,9 @@ export interface AbstractBlanks {
   sentence: string;
 }
 
-export function compositionLabel(cfg: Pick<CriteriaConfig, "elements" | "minWt">): string {
-  return cfg.elements.map((el) => ((cfg.minWt[el] ?? 0) > 0 ? `${el} ≥ ${cfg.minWt[el]} wt%` : el)).join(", ");
+export function compositionLabel(cfg: Pick<CriteriaConfig, "elements" | "minWt" | "minHits">): string {
+  const els = cfg.elements.map((el) => ((cfg.minWt[el] ?? 0) > 0 ? `${el} ≥ ${cfg.minWt[el]} wt%` : el)).join(", ");
+  return (cfg.minHits ?? 1) > 1 ? `${els} 중 ${cfg.minHits}개 이상` : els;
 }
 
 /** 초록 '분석 결과' 빈칸 채우기 */

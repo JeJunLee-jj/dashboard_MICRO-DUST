@@ -82,6 +82,15 @@ describe("기준 적용과 위치별 비율", () => {
     const f = simulate(particles, cfg, s).sites.find((g) => g.id === "food")!;
     expect(f.comp).toMatchObject({ k: 1, n: 2 });       // P4(Fe 3 wt%) 탈락, P5(Cu) 유지
   });
+  it("원소 2개 이상 동시 검출을 요구할 수 있다", () => {
+    const { s: s2, particles: ps } = dataset([
+      particle("Q1", "개찰구", { feret: 7, ar: 1.2, eds: [["Fe", 90], ["Cu", 10]] }),   // Fe+Cu → 해당
+      particle("Q2", "개찰구", { feret: 7, ar: 1.2, eds: [["Fe", 100]] }),             // Fe만 → 해당 안 됨
+    ]);
+    const g = simulate(ps, { ...DEFAULT_CRITERIA, minHits: 2 }, s2).sites.find((x) => x.id === "gate")!;
+    expect(g.comp).toMatchObject({ k: 1, n: 2 });
+    expect(g.inRange[0].compHits).toEqual(["Fe", "Cu"]);
+  });
   it("AR 기준값을 바꾸면 형상 비율이 바뀐다", () => {
     expect(r.overall.shape).toMatchObject({ k: 3, n: 4 });         // P1 2.2, P2 1.1, P4 1.6, P6 1.8 (기준 1.5)
     expect(r.overall.shapeCompare).toMatchObject({ k: 1, n: 4 });  // 기준 2.0

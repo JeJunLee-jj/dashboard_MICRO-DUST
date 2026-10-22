@@ -1,6 +1,7 @@
 /* 강남역 지하상가 채취 위치(초록의 5개 지점) — 파일 경로·채취 지점 입력값에서 위치를 알아낸다.
    - 사진·EDS 파일을 위치별 폴더에 넣거나 파일 이름에 위치명(예: 개찰구, B-28)을 넣으면 자동으로 지정된다.
-   - 지도 좌표(x, y)는 모식도(0–1 정규화) 기준의 기본값이다. 실제 평면도를 올리면 화면에서 옮길 수 있다. */
+   - 지도 좌표(x, y)는 '강남역 지하도상가 배치도'(src/assets/gangnam-floorplan.webp, 2000×1414) 위 점포 위치를 0–1로 나타낸 값이다.
+     개찰구는 D구역 쪽 '강남역 2호선' 연결부에 두었다. 다른 평면도를 올리면 화면에서 마커를 옮길 수 있다. */
 
 export interface SiteDef {
   id: string;
@@ -15,11 +16,11 @@ export interface SiteDef {
 }
 
 export const GANGNAM_SITES: SiteDef[] = [
-  { id: "gate", label: "개찰구 (D구역)", short: "개찰구", zone: "D구역", pattern: /개찰구|게이트|\bgate\b|D\s*-?\s*구역/i, x: 0.405, y: 0.53 },
-  { id: "food", label: "음식점 (B-28)", short: "음식점", zone: "B-28", pattern: /음식점|식당|restaurant|(?<![A-Za-z0-9])B\s*-?\s*28(?!\d)/i, x: 0.15, y: 0.53 },
-  { id: "cafe", label: "카페·간편식 (E-43)", short: "카페", zone: "E-43", pattern: /카페|간편식|\bcafe\b|(?<![A-Za-z0-9])E\s*-?\s*43(?!\d)/i, x: 0.6, y: 0.53 },
-  { id: "cosmetic", label: "화장품 (F-1)", short: "화장품", zone: "F-1", pattern: /화장품|cosmetic|(?<![A-Za-z0-9])F\s*-?\s*1(?![\d.])/i, x: 0.895, y: 0.53 },
-  { id: "clothing", label: "의류매장 (E-2)", short: "의류", zone: "E-2", pattern: /의류|옷가게|clothing|(?<![A-Za-z0-9])E\s*-?\s*2(?![\d.])/i, x: 0.745, y: 0.48 },
+  { id: "gate", label: "개찰구 (D구역)", short: "개찰구", zone: "D구역", pattern: /개찰구|게이트|\bgate\b|D\s*-?\s*구역/i, x: 0.5425, y: 0.4851 },
+  { id: "food", label: "음식점 (B-28)", short: "음식점", zone: "B-28", pattern: /음식점|식당|restaurant|(?<![A-Za-z0-9])B\s*-?\s*28(?!\d)/i, x: 0.408, y: 0.6775 },
+  { id: "cafe", label: "카페·간편식 (E-43)", short: "카페", zone: "E-43", pattern: /카페|간편식|\bcafe\b|(?<![A-Za-z0-9])E\s*-?\s*43(?!\d)/i, x: 0.409, y: 0.2758 },
+  { id: "cosmetic", label: "화장품 (F-1)", short: "화장품", zone: "F-1", pattern: /화장품|cosmetic|(?<![A-Za-z0-9])F\s*-?\s*1(?![\d.])/i, x: 0.2575, y: 0.4611 },
+  { id: "clothing", label: "의류매장 (E-2)", short: "의류", zone: "E-2", pattern: /의류|옷가게|clothing|(?<![A-Za-z0-9])E\s*-?\s*2(?![\d.])/i, x: 0.355, y: 0.4611 },
 ];
 
 /** 한 문자열(채취 지점 값·파일 이름)에서 위치 찾기 */

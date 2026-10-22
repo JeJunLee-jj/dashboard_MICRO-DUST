@@ -6,7 +6,7 @@ import { Bar, BarChart, CartesianGrid, ErrorBar, Line, LineChart, ReferenceLine,
 import { hrefFor, useStore } from "../state/store";
 import { Button, Card, Formula, Kpi, Legend, Notice, PageHeader, Segmented } from "../components/ui";
 import { ChartCard } from "../components/ChartCard";
-import { SiteMap, METRIC_LABEL, type MapMetric } from "../components/SiteMap";
+import { SiteMap, SiteCards, METRIC_LABEL, type MapMetric } from "../components/SiteMap";
 import { axisProps, gridProps, pctTick, tip } from "../components/chartKit";
 import {
   DEFAULT_CRITERIA, MORENO_ELEMENTS, abstractBlanks, arSensitivity, compositionLabel, simulate, thresholdSteps,
@@ -137,7 +137,7 @@ export function SimulatorPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-4">
         <Kpi label="분석 대상 입자" value={res.overall.inRange.length} unit="개" detail={cfg.applySize ? `${cfg.sizeBy === "feret" ? "최대 길이" : "등가원 지름"} ${cfg.sizeMin}–${cfg.sizeMax} µm · 5개 위치` : "크기 범위 미적용 · 5개 위치"} />
         <Kpi label={`형상 기준 (AR ≥ ${cfg.arThreshold})`} value={f1(res.overall.shape.pct)} detail={`${rateTxt(res.overall.shape)} 입자`} />
-        <Kpi label="조성 기준" value={f1(res.overall.comp.pct)} detail={`${rateTxt(res.overall.comp)} · ${compositionLabel(cfg)}`} />
+        <Kpi label={cfg.minHits > 1 ? `조성 기준 (${cfg.minHits}개 이상)` : "조성 기준"} value={f1(res.overall.comp.pct)} detail={`${rateTxt(res.overall.comp)} · ${compositionLabel(cfg)}`} />
         <Kpi label="두 기준 모두" value={f1(res.overall.both.pct)} detail={`${rateTxt(res.overall.both)} 입자`} />
         <Kpi label={`AR ${cfg.arThreshold} → ${cfg.arCompare}`} value={<span className="text-[0.72em]">{f1(res.overall.shape.pct)}<span className="text-ink-3 mx-1">→</span>{f1(res.overall.shapeCompare.pct)}</span>} detail="형상 기준 해당 비율 변화" />
       </div>
@@ -145,18 +145,19 @@ export function SimulatorPage() {
       <div className="grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_380px] gap-4 mt-4">
         <Card
           title="지하상가 위치별 기준 해당 비율"
-          subtitle={<>원 안의 숫자 = 선택한 기준에 해당하는 입자 비율(분석 대상 중 판정 가능 입자 기준), 원 크기 = 분석 대상 입자 수, 색이 진할수록 비율이 높음. 원을 누르면 그 위치 입자만 아래에 보입니다.</>}
+          subtitle={<>원 안의 숫자 = 선택한 기준에 해당하는 입자 비율(분석 대상 중 판정 가능 입자 기준), 원 아래 = 해당/판정 가능 입자 수, 원 크기 = 분석 대상 입자 수, 색이 진할수록 비율이 높음. 원이나 아래 카드를 누르면 그 위치 입자만 아래에 보입니다.</>}
           actions={<>
             <Segmented value={metric} onChange={setMetric} options={(["shape", "comp", "both"] as MapMetric[]).map((m) => ({ value: m, label: METRIC_LABEL[m] }))} />
           </>}
         >
           <SiteMap sites={res.sites} sim={sim} setSim={setSim} metric={metric} selected={selected} onSelect={setSelected} editing={editing} />
+          <SiteCards sites={res.sites} selected={selected} onSelect={setSelected} />
           <div className="flex flex-wrap items-center gap-2 mt-3 text-[13.5px]">
-            <Button small onClick={() => planInput.current?.click()}>{sim.floorPlan ? "평면도 바꾸기" : "실제 평면도 이미지 올리기"}</Button>
-            {sim.floorPlan && <Button small variant="ghost" onClick={() => setSim((s) => ({ ...s, floorPlan: null }))}>모식도로 되돌리기</Button>}
+            <Button small onClick={() => planInput.current?.click()}>다른 평면도 올리기</Button>
+            {sim.floorPlan && <Button small variant="ghost" onClick={() => setSim((s) => ({ ...s, floorPlan: null, positions: {} }))}>기본 배치도로 되돌리기</Button>}
             <Button small variant={editing ? "primary" : "default"} onClick={() => setEditing((v) => !v)}>{editing ? "위치 옮기기 끝" : "마커 위치 옮기기"}</Button>
             {Object.keys(sim.positions).length > 0 && <Button small variant="ghost" onClick={() => setSim((s) => ({ ...s, positions: {} }))}>마커 위치 초기화</Button>}
-            <span className="text-ink-3">{sim.floorPlan ? `평면도: ${sim.floorPlan.name}` : "지금은 모식도입니다(구역 배치·거리는 실제와 다름)."}</span>
+            <span className="text-ink-3">{sim.floorPlan ? `평면도: ${sim.floorPlan.name}` : "배경: 강남역 지하도상가 배치도"}</span>
             <input ref={planInput} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPlan(f); e.target.value = ""; }} />
           </div>
           <div className="mt-2"><ColorScale /></div>
@@ -307,7 +308,7 @@ export function SimulatorPage() {
           <Formula title="판정 규칙">
             분석 대상 = {cfg.applySize ? `${cfg.sizeBy === "feret" ? "최대 Feret 지름" : "등가원 지름"} ${cfg.sizeMin}–${cfg.sizeMax} µm` : "크기 제한 없음"}<br />
             형상 기준 = 종횡비(타원 근사 장축/단축) ≥ {cfg.arThreshold}<br />
-            조성 기준 = {compositionLabel(cfg)} 중 하나 이상 검출{settings.belowLoqCountsAsDetected ? "(정량한계 미만 포함)" : ""}<br />
+            조성 기준 = {compositionLabel(cfg)}{cfg.minHits > 1 ? "" : " 중 하나 이상"} 검출{settings.belowLoqCountsAsDetected ? "(정량한계 미만 포함)" : ""}<br />
             비율 = 기준 해당 입자 ÷ 판정 가능 입자 (위치별, 분석 대상 안에서)
           </Formula>
           <p className="text-[13px] text-ink-2 mt-2 leading-relaxed">
@@ -388,7 +389,11 @@ function CriteriaPanel({ cfg, setCfg, dataElements }: { cfg: CriteriaConfig; set
         </section>
 
         <section>
-          <h4 className="font-semibold mb-1.5" style={{ color: C_COMP }}>③ 조성 기준 — 아래 원소 중 하나 이상 검출</h4>
+          <h4 className="font-semibold mb-1.5" style={{ color: C_COMP }}>③ 조성 기준 — 아래 원소 중
+            <select className="sim-inp mx-1" value={cfg.minHits} onChange={(e) => setCfg({ minHits: Number(e.target.value) })} aria-label="함께 검출되어야 하는 원소 수">
+              {[1, 2, 3].map((k) => <option key={k} value={k}>{k === 1 ? "하나 이상" : `${k}개 이상 함께`}</option>)}
+            </select>
+            검출</h4>
           <div className="space-y-1">
             {[...MORENO_ELEMENTS, ...cfg.elements.filter((e) => !MORENO_ELEMENTS.includes(e))].map((el) => (
               <div key={el} className="flex items-center gap-2">
@@ -407,7 +412,7 @@ function CriteriaPanel({ cfg, setCfg, dataElements }: { cfg: CriteriaConfig; set
             </div>
           )}
           <p className="text-[12.5px] text-ink-3 mt-1.5 leading-relaxed">
-            Fe는 지하 공간 입자 대부분에서 검출되므로 &lsquo;검출만&rsquo;으로 두면 조성 기준이 거의 100%가 될 수 있습니다. 필요하면 Fe에 wt% 하한을 두고, 그 값을 초록 방법에 적으세요.
+            Fe는 지하 공간 입자 대부분에서 검출되므로 &lsquo;하나 이상 + 검출만&rsquo;이면 조성 기준이 거의 100%가 될 수 있습니다. &lsquo;2개 이상 함께&rsquo;(Fe와 다른 마모 원소 동반)나 Fe 체크 해제(Fe 외 원소만), Fe wt% 하한 중 하나를 골라 초록 방법에 적으세요.
           </p>
         </section>
       </div>
