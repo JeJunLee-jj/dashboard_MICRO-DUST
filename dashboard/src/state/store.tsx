@@ -17,12 +17,14 @@ import { DEMO_FILES } from "../lib/bundledFiles";
 import { applyFilters } from "../lib/filters";
 import { colorOrder } from "../lib/viewModels";
 import type { Unmatched } from "../lib/join";
+import { DEFAULT_SIM, normalizeSim, type SimSettings } from "../lib/criteria";
 
 const LS = {
   settings: "semeds.settings.v1",
   hazard: "semeds.hazardRules.v1",
   rules: "semeds.classRules.v1",
   overrides: "semeds.overrides.v1",
+  sim: "semeds.sim.v1",
 };
 function readLS<T>(key: string, fallback: T): T {
   try {
@@ -41,15 +43,15 @@ function writeLS(key: string, v: unknown) {
 }
 
 export interface Route {
-  page: "overview" | "particles" | "eds" | "integration" | "hazard" | "samples" | "data" | "settings";
+  page: "simulator" | "overview" | "particles" | "eds" | "integration" | "hazard" | "samples" | "data" | "settings";
   particleKey?: string;
 }
 
 function parseHash(): Route {
   const h = decodeURIComponent(window.location.hash.replace(/^#\/?/, ""));
   const [page, ...rest] = h.split("/");
-  const pages: Route["page"][] = ["overview", "particles", "eds", "integration", "hazard", "samples", "data", "settings"];
-  const p = (pages as string[]).includes(page) ? (page as Route["page"]) : "overview";
+  const pages: Route["page"][] = ["simulator", "overview", "particles", "eds", "integration", "hazard", "samples", "data", "settings"];
+  const p = (pages as string[]).includes(page) ? (page as Route["page"]) : "simulator";
   return { page: p, particleKey: p === "particles" && rest.length ? rest.join("/") : undefined };
 }
 
@@ -85,6 +87,11 @@ interface Store {
   registerParticles(inputs: PairInput[]): string[];
   /** 입자 메타데이터 일부 수정(이미지 측정값 저장 등) */
   updateMeta(key: string, patch: Partial<ParticleMeta>): void;
+  /** 여러 입자 메타데이터를 한 번에 수정(일괄 측정) */
+  updateMetaMany(patches: Record<string, Partial<ParticleMeta>>): void;
+  /** 위치별 기준 시뮬레이터 설정 */
+  sim: SimSettings;
+  setSim(s: SimSettings | ((s: SimSettings) => SimSettings)): void;
   persist: PersistState;
   restoreSaved(): Promise<void>;
   exportBackup(): Promise<void>;
@@ -108,6 +115,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [settings, setSettingsState] = useState<AnalysisSettings>(() => ({ ...DEFAULT_SETTINGS, ...readLS<Partial<AnalysisSettings>>(LS.settings, {}) }));
   const [hazardRules, setHazardState] = useState<HazardRule[]>(() => readLS(LS.hazard, DEFAULT_HAZARD_RULES));
   const [rules, setRulesState] = useState<ClassificationRules>(() => readLS(LS.rules, DEFAULT_CLASSIFICATION_RULES));
+  const [sim, setSimState] = useState<SimSettings>(() => normalizeSim(readLS<Partial<SimSettings>>(LS.sim, DEFAULT_SIM)));
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [route, setRoute] = useState<Route>(parseHash);
   const [busy, setBusy] = useState<string | null>(null);
@@ -134,6 +142,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const setHazardRules = useCallback((r: HazardRule[]) => {
     setHazardState(r);
     writeLS(LS.hazard, r);
+  }, []);
+  const setSim = useCallback((v: SimSettings | ((s: SimSettings) => SimSettings)) => {
+    setSimState((cur) => {
+      const next = typeof v === "function" ? v(cur) : v;
+      writeLS(LS.sim, next);
+      return next;
+    });
   }, []);
   const setRules = useCallback((r: ClassificationRules) => {
     setRulesState(r);
@@ -171,10 +186,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return { ...r.state, origin: "user", shared: { savedAt: r.savedAt, note: r.note }, overrides: { ...r.state.overrides, ...readLS<Record<string, UserOverride>>(LS.overrides, {}) } };
     });
     if (applySettings) {
-      const ex = r.extras as { settings?: AnalysisSettings; hazardRules?: HazardRule[]; rules?: ClassificationRules };
+      const ex = r.extras as { settings?: AnalysisSettings; hazardRules?: HazardRule[]; rules?: ClassificationRules; sim?: Partial<SimSettings> };
       if (ex.settings) setSettingsState({ ...DEFAULT_SETTINGS, ...ex.settings });
       if (ex.hazardRules) setHazardState(ex.hazardRules);
       if (ex.rules) setRulesState(ex.rules);
+      if (ex.sim) setSimState(normalizeSim(ex.sim));
     }
     setFilters(EMPTY_FILTERS);
   }, []);
@@ -237,12 +253,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const exportBackup = useCallback(async () => {
     setBusy("백업 파일을 만드는 중…");
     try {
-      const json = await buildBackup(data, { settings, hazardRules, rules });
+      const json = await buildBackup(data, { settings, hazardRules, rules, sim });
       downloadText(`SEM-EDS_backup${data.origin === "demo" ? "_DEMO" : ""}_${new Date().toISOString().slice(0, 10)}.json`, json, "application/json");
     } finally {
       setBusy(null);
     }
-  }, [data, settings, hazardRules, rules]);
+  }, [data, settings, hazardRules, rules, sim]);
 
   const importBackup = useCallback(async (file: File) => {
     setBusy("백업 파일을 불러오는 중…");
@@ -252,19 +268,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         revokeImages(d.images);
         return r.state;
       });
-      const ex = r.extras as { settings?: AnalysisSettings; hazardRules?: HazardRule[]; rules?: ClassificationRules };
+      const ex = r.extras as { settings?: AnalysisSettings; hazardRules?: HazardRule[]; rules?: ClassificationRules; sim?: Partial<SimSettings> };
       if (ex.settings) setSettings({ ...DEFAULT_SETTINGS, ...ex.settings });
       if (ex.hazardRules) setHazardRules(ex.hazardRules);
       if (ex.rules) setRules(ex.rules);
+      if (ex.sim) setSim(normalizeSim(ex.sim));
       setFilters(EMPTY_FILTERS);
       return `백업(${new Date(r.savedAt).toLocaleString("ko-KR")})을 불러왔습니다 — 입자 메타데이터 ${r.state.meta.length}건, 이미지 ${r.state.images.length}장.`;
     } finally {
       setBusy(null);
     }
-  }, [setSettings, setHazardRules, setRules]);
+  }, [setSettings, setHazardRules, setRules, setSim]);
 
   const updateMeta = useCallback((key: string, patch: Partial<ParticleMeta>) => {
     setData((d) => ({ ...d, shared: null, meta: d.meta.map((m) => (`${m.sample_id}::${m.particle_id}` === key ? { ...m, ...patch } : m)) }));
+  }, []);
+
+  const updateMetaMany = useCallback((patches: Record<string, Partial<ParticleMeta>>) => {
+    setData((d) => ({ ...d, shared: null, meta: d.meta.map((m) => {
+      const p = patches[`${m.sample_id}::${m.particle_id}`];
+      return p ? { ...m, ...p } : m;
+    }) }));
   }, []);
 
   const registerParticles = useCallback((inputs: PairInput[]) => {
@@ -390,7 +414,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     particles: joined.particles, filtered, unmatched: joined.unmatched, allIssues,
     colorOrder: order, origin: data.origin,
     navigate, setFilters, setSettings, setHazardRules, setRules, setOverride, loadDemo, clearData, uploadFiles,
-    registerParticles, updateMeta, persist, restoreSaved, exportBackup, importBackup, sharedInfo, loadShared,
+    registerParticles, updateMeta, updateMetaMany, sim, setSim, persist, restoreSaved, exportBackup, importBackup, sharedInfo, loadShared,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

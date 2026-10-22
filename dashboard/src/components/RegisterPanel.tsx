@@ -1,5 +1,8 @@
 /* 입자 등록: SEM 이미지 1장 + EDS 정량 CSV 1개 = 입자 1개.
-   - 파일을 끌어 놓으면 이미지마다 한 행을 만들고, CSV는 아직 짝이 없는 행에 순서대로 붙인다(파일 수정 시각 순).
+   - 파일·폴더를 끌어 놓으면 이미지마다 한 행을 만든다. CSV는 같은 폴더 안에서 ① 이름이 같은 이미지(확장자 제외)에,
+     ② 남은 것은 파일 수정 시각 순서대로 짝이 없는 행에 붙인다.
+   - 폴더 이름이나 파일 이름에 위치명(개찰구, B-28, 카페, F-1, 의류 등)이 있으면 채취 지점을 자동으로 지정한다.
+   - XLSX의 시트가 여러 개이거나 한 표에 입자 ID가 여러 개면 입자별로 나눈다.
    - Phenom TIFF는 픽셀 크기·배율·촬영 시각·가속전압 등을 파일에서 읽어 채운다.
    - 형상 지표는 자동 측정하되, 윤곽을 겹쳐 보여주고 사용자가 확인한 경우에만 크기를 저장한다. 형상 분류는 사용자가 고른다. */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -13,10 +16,41 @@ import { DEFAULT_SEGMENT, measureImage, type SegmentParams, type ShapeMeasuremen
 import { MORPHOLOGY_CLASSES, morphologyLabel } from "../lib/morphology";
 import type { ImageAsset, MorphologyClass } from "../lib/types";
 import type { Table } from "../lib/parse/common";
+import { GANGNAM_SITES, matchSitePath } from "../lib/sites";
+
+/** 끌어 놓은 파일·폴더 → (파일, 상대 경로). 폴더는 안쪽까지 모두 읽는다 */
+type Picked = { file: File; path: string };
+async function pickedFromDrop(dt: DataTransfer): Promise<Picked[]> {
+  // webkitGetAsEntry는 drop 이벤트 안에서 바로 불러야 한다
+  const entries = [...dt.items].map((i) => (i.kind === "file" ? i.webkitGetAsEntry?.() ?? null : null));
+  if (!entries.some(Boolean)) return [...dt.files].map((f) => ({ file: f, path: f.name }));
+  const out: Picked[] = [];
+  const walk = async (entry: FileSystemEntry, prefix: string): Promise<void> => {
+    if (entry.isFile) {
+      const f = await new Promise<File>((res, rej) => (entry as FileSystemFileEntry).file(res, rej));
+      out.push({ file: f, path: prefix + f.name });
+    } else if (entry.isDirectory) {
+      const reader = (entry as FileSystemDirectoryEntry).createReader();
+      for (;;) {
+        const batch = await new Promise<FileSystemEntry[]>((res, rej) => reader.readEntries(res, rej));
+        if (!batch.length) break;
+        for (const e of batch) await walk(e, `${prefix}${entry.name}/`);
+      }
+    }
+  };
+  for (const e of entries) if (e) await walk(e, "");
+  return out;
+}
+
+const dirOf = (path: string) => path.split("/").slice(0, -1).join("/");
+/** 짝짓기용 이름: 확장자·시트명·복사본 번호 " (2)"·흔한 접두어·구분 기호 제거 */
+const stemOf = (name: string) => name.replace(/\.[^.]+$/, "").replace(/\s*›.*$/, "").replace(/\s*\(\d+\)$/, "").toLowerCase().replace(/quantification|quant|_?eds|_?sem|image|img/g, "").replace(/[\s_\-()[\]]+/g, "");
 
 interface CsvItem {
   id: string;
   name: string;
+  /** 상대 경로(폴더 포함) */
+  path: string;
   table: Table | null;
   error: string | null;
   preview: Array<{ symbol: string; wt: string; at: string }>;
@@ -24,6 +58,9 @@ interface CsvItem {
 
 interface Row {
   id: string;
+  /** 같은 폴더끼리만 짝을 짓는다 */
+  group: string;
+  imagePath: string | null;
   imageName: string | null;
   image: ImageAsset | null;
   imageError: string | null;
@@ -71,6 +108,7 @@ export function RegisterPanel() {
   const [over, setOver] = useState(false);
   const [done, setDone] = useState<string[] | null>(null);
   const input = useRef<HTMLInputElement>(null);
+  const folder = useRef<HTMLInputElement>(null);
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
 
@@ -100,54 +138,81 @@ export function RegisterPanel() {
     }
   };
 
-  const addFiles = async (files: File[]) => {
+  const addFiles = async (picked: Picked[]) => {
     setDone(null);
-    const ordered = [...files].sort((a, b) => a.lastModified - b.lastModified || a.name.localeCompare(b.name));
-    const imgs = ordered.filter((f) => isImageName(f.name));
-    const tabs = ordered.filter((f) => isCsvName(f.name) || isSpreadsheetName(f.name));
+    const ordered = [...picked].sort((a, b) => a.file.lastModified - b.file.lastModified || a.path.localeCompare(b.path));
+    const imgs = ordered.filter((x) => isImageName(x.file.name));
+    const tabs = ordered.filter((x) => isCsvName(x.file.name) || isSpreadsheetName(x.file.name));
     const defaults = readDefaults();
+    const blankRow = (group: string, path: string | null): Row => {
+      const site = path ? matchSitePath(path) : null;
+      return {
+        id: uid(), group, imagePath: path, imageName: path ? path.split("/").pop()! : null, image: null, imageError: null, loading: !!path, csvId: null,
+        sample_id: site ? `강남_${site.short}` : defaults.sample_id, particle_id: "", location: site?.label ?? defaults.location, date: "", sample_type: defaults.sample_type,
+        morphology: "", notes: "", pixelSize: "", params: { ...DEFAULT_SEGMENT }, measure: null, measuring: false, measureError: null, contourOk: false,
+      };
+    };
 
     // 이미지 → 행
-    const newRows: Row[] = imgs.map((f) => ({
-      id: uid(), imageName: f.name, image: null, imageError: null, loading: true, csvId: null,
-      sample_id: defaults.sample_id, particle_id: "", location: defaults.location, date: "", sample_type: defaults.sample_type,
-      morphology: "", notes: "", pixelSize: "", params: { ...DEFAULT_SEGMENT }, measure: null, measuring: false, measureError: null, contourOk: false,
-    }));
-    // CSV → 목록
+    const newRows: Row[] = imgs.map((x) => blankRow(dirOf(x.path), x.path));
+    // CSV·XLSX → 목록(시트·입자 ID별로 나눔)
     const newCsvs: CsvItem[] = [];
-    for (const f of tabs) {
+    for (const x of tabs) {
+      const f = x.file;
+      const dir = dirOf(x.path);
       try {
         const { tables } = readTables(new Uint8Array(await f.arrayBuffer()), f.name);
-        const t = tables.find(looksLikeSingleParticleEds) ?? null;
-        newCsvs.push({ id: uid(), name: f.name, table: t, error: t ? null : "원소·wt%/at% 열을 찾지 못했습니다(EDS 정량 파일이 아닌 것 같습니다).", preview: t ? edsPreview(t) : [] });
+        const eds = tables.filter(looksLikeSingleParticleEds);
+        if (!eds.length) {
+          newCsvs.push({ id: uid(), name: f.name, path: x.path, table: null, error: "원소·wt%/at% 열을 찾지 못했습니다(EDS 정량 파일이 아닌 것 같습니다). 여러 입자가 한 줄씩 들어 있는 표라면 아래 '고급: 일괄 업로드'를 쓰세요.", preview: [] });
+          continue;
+        }
+        for (const t of eds) {
+          const ids = [...new Set(t.rows.map((r) => String(r.particle_id ?? "").trim()).filter(Boolean))];
+          const parts: Table[] = ids.length > 1
+            ? ids.map((pid) => ({ ...t, name: `${t.name} › ${pid}`, rows: t.rows.filter((r) => String(r.particle_id ?? "").trim() === pid) }))
+            : [t];
+          for (const pt of parts) newCsvs.push({ id: uid(), name: pt.name, path: `${dir ? dir + "/" : ""}${pt.name}`, table: pt, error: null, preview: edsPreview(pt) });
+        }
       } catch (e) {
-        newCsvs.push({ id: uid(), name: f.name, table: null, error: (e as Error).message, preview: [] });
+        newCsvs.push({ id: uid(), name: f.name, path: x.path, table: null, error: (e as Error).message, preview: [] });
       }
     }
-    const others = ordered.filter((f) => !imgs.includes(f) && !tabs.includes(f));
-    if (others.length) alert(`지원하지 않는 파일: ${others.map((f) => f.name).join(", ")}\n이미지(TIFF·JPG·PNG)와 EDS CSV·XLSX만 올려 주세요.`);
+    const others = ordered.filter((x) => !imgs.includes(x) && !tabs.includes(x) && !/^(\.|thumbs\.db$|desktop\.ini$)/i.test(x.file.name) && !/\.(emsa|msa|xml|txt|json|hdr)$/i.test(x.file.name));
+    if (others.length) alert(`지원하지 않는 파일(건너뜀): ${others.map((x) => x.file.name).slice(0, 10).join(", ")}${others.length > 10 ? " …" : ""}\n이미지(TIFF·JPG·PNG)와 EDS CSV·XLSX만 읽습니다.`);
 
-    // 짝짓기: 짝 없는 행(기존+새 행) 순서대로 CSV를 붙이고, 남는 CSV는 이미지 없는 행으로
+    // 짝짓기: 같은 폴더 안에서 ① 이름이 같은 것 ② 시각 순서. 남는 CSV는 이미지 없는 행으로
     setCsvs((c) => [...c, ...newCsvs]);
     setRows((rs) => {
       const all = [...rs, ...newRows].map((r) => ({ ...r }));
       const queue = newCsvs.filter((c) => c.table);
-      for (const r of all) if (!r.csvId && queue.length) r.csvId = queue.shift()!.id;
+      const take = (c: CsvItem) => queue.splice(queue.indexOf(c), 1);
+      for (const r of all) {
+        if (r.csvId || !r.imageName) continue;
+        const stem = stemOf(r.imageName);
+        const c = queue.find((q) => dirOf(q.path) === r.group && stem && stemOf(q.name) === stem);
+        if (c) { r.csvId = c.id; take(c); }
+      }
+      for (const r of all) {
+        if (r.csvId) continue;
+        const c = queue.find((q) => dirOf(q.path) === r.group);
+        if (c) { r.csvId = c.id; take(c); }
+      }
       for (const c of queue) {
-        all.push({
-          id: uid(), imageName: null, image: null, imageError: null, loading: false, csvId: c.id,
-          sample_id: defaults.sample_id, particle_id: "", location: defaults.location, date: "", sample_type: defaults.sample_type,
-          morphology: "", notes: "", pixelSize: "", params: { ...DEFAULT_SEGMENT }, measure: null, measuring: false, measureError: null, contourOk: false,
-        });
+        const row = blankRow(dirOf(c.path), null);
+        const site = matchSitePath(c.path);
+        if (site) { row.location = site.label; row.sample_id = `강남_${site.short}`; }
+        row.csvId = c.id;
+        all.push(row);
       }
       return all;
     });
 
     // 이미지 읽기(장비 메타데이터 포함) → 기본값 채우기 → 측정
-    for (const [i, f] of imgs.entries()) {
+    for (const [i, x] of imgs.entries()) {
       const id = newRows[i].id;
       try {
-        const img = await loadImageFile(f, "user");
+        const img = await loadImageFile(x.file, "user");
         const inst = img.instrument;
         const local = localDateTime(inst?.acquiredAtUtc ?? null);
         const cur = rowsRef.current.find((r) => r.id === id)!;
@@ -246,13 +311,19 @@ export function RegisterPanel() {
       <div
         onDragOver={(e) => { e.preventDefault(); setOver(true); }}
         onDragLeave={() => setOver(false)}
-        onDrop={(e) => { e.preventDefault(); setOver(false); addFiles([...e.dataTransfer.files]); }}
+        onDrop={(e) => { e.preventDefault(); setOver(false); pickedFromDrop(e.dataTransfer).then(addFiles); }}
         className={`border-2 border-dashed rounded-[3px] px-5 py-5 text-center ${over ? "border-accent bg-accent-soft" : "border-line-2 bg-surface-2"}`}
       >
-        <div className="text-[14.5px] font-medium">이미지와 EDS 파일을 여기로 끌어 놓기</div>
-        <div className="text-[13px] text-ink-3 mt-0.5">이미지와 CSV는 파일 수정 시각 순서대로 짝을 짓습니다 — 아래 표에서 확인하고 필요하면 바꾸세요.</div>
-        <div className="mt-2.5"><Button variant="primary" onClick={() => input.current?.click()}>파일 선택</Button></div>
-        <input ref={input} type="file" multiple accept=".tif,.tiff,.jpg,.jpeg,.png,.bmp,.csv,.tsv,.txt,.xlsx,.xls" className="hidden" onChange={(e) => { addFiles([...(e.target.files ?? [])]); e.target.value = ""; }} />
+        <div className="text-[14.5px] font-medium">이미지와 EDS 파일(또는 위치별 폴더)을 여기로 끌어 놓기</div>
+        <div className="text-[13px] text-ink-3 mt-0.5 max-w-3xl mx-auto">
+          같은 폴더 안에서 이름이 같은 사진·CSV끼리, 나머지는 파일 수정 시각 순서대로 짝을 짓습니다. 폴더·파일 이름에 위치({GANGNAM_SITES.map((x) => x.short).join("·")} 또는 {GANGNAM_SITES.map((x) => x.zone).join("·")})가 있으면 채취 지점이 자동으로 들어갑니다 — 아래에서 확인하고 필요하면 바꾸세요.
+        </div>
+        <div className="mt-2.5 flex justify-center gap-2">
+          <Button variant="primary" onClick={() => input.current?.click()}>파일 선택</Button>
+          <Button onClick={() => folder.current?.click()}>폴더 선택</Button>
+        </div>
+        <input ref={input} type="file" multiple accept=".tif,.tiff,.jpg,.jpeg,.png,.bmp,.csv,.tsv,.txt,.xlsx,.xls" className="hidden" onChange={(e) => { addFiles([...(e.target.files ?? [])].map((f) => ({ file: f, path: f.name }))); e.target.value = ""; }} />
+        <input ref={folder} type="file" multiple className="hidden" {...{ webkitdirectory: "", directory: "" }} onChange={(e) => { addFiles([...(e.target.files ?? [])].map((f) => ({ file: f, path: f.webkitRelativePath || f.name }))); e.target.value = ""; }} />
       </div>
 
       {done && (
@@ -293,7 +364,7 @@ export function RegisterPanel() {
                         <div className="absolute inset-0 grid place-items-center text-[13px] text-white/60 px-3 text-center">{r.loading ? "이미지 읽는 중…" : r.imageError ?? "이미지 없음"}</div>
                       )}
                     </div>
-                    <div className="text-[12.5px] text-ink-3 mt-1 font-mono break-all">{r.imageName ?? "—"}</div>
+                    <div className="text-[12.5px] text-ink-3 mt-1 font-mono break-all">{r.imagePath ?? r.imageName ?? "—"}</div>
                     {inst && (
                       <div className="text-[12.5px] text-ink-2 mt-1 leading-relaxed">
                         {inst.instrument} · ×{inst.magnification?.toLocaleString()} · FW {fmt(inst.fieldWidthUm, 1)} µm · {inst.highVoltageKv} kV · {inst.detector} · WD {fmt(inst.workingDistanceMm)} mm
@@ -307,7 +378,7 @@ export function RegisterPanel() {
                   <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-[13.5px] content-start">
                     <Field label="시료 ID *"><input className="inp" value={r.sample_id} onChange={(e) => patch(r.id, { sample_id: e.target.value })} placeholder="예: 261008_Local" /></Field>
                     <Field label="입자 ID *"><input className="inp" value={r.particle_id} onChange={(e) => patch(r.id, { particle_id: e.target.value })} /></Field>
-                    <Field label="채취 지점"><input className="inp" value={r.location} onChange={(e) => patch(r.id, { location: e.target.value })} placeholder="예: 천안아산역 승강장" /></Field>
+                    <Field label="채취 지점"><input className="inp" list="site-options" value={r.location} onChange={(e) => patch(r.id, { location: e.target.value })} placeholder="예: 개찰구 (D구역)" /></Field>
                     <Field label="채취일"><input className="inp" type="date" value={r.date} onChange={(e) => patch(r.id, { date: e.target.value })} /></Field>
                     <Field label="시료 유형"><input className="inp" value={r.sample_type} onChange={(e) => patch(r.id, { sample_type: e.target.value })} placeholder="측정 / 배경(외기)" /></Field>
                     <Field label="픽셀 크기 (µm/px)"><input className="inp" value={r.pixelSize} onChange={(e) => patch(r.id, { pixelSize: e.target.value })} placeholder="장비 메타데이터 없으면 입력" /></Field>
@@ -380,11 +451,15 @@ export function RegisterPanel() {
           })}
           <div className="flex flex-wrap items-center gap-3">
             <Button variant="primary" disabled={!readyCount} onClick={submit}>입자 {readyCount}개 등록</Button>
+            {rows.some((r) => r.measure && !r.contourOk) && (
+              <Button onClick={() => setRows((rs) => rs.map((r) => (r.measure ? { ...r, contourOk: true } : r)))} title="위의 주황 윤곽을 모두 눈으로 확인했을 때만 누르세요">윤곽 모두 확인함({rows.filter((r) => r.measure && !r.contourOk).length}개)</Button>
+            )}
             <Button variant="ghost" onClick={() => { setRows([]); setCsvs([]); }}>목록 비우기</Button>
             {readyCount < rows.length && <span className="text-[13.5px] text-ink-2">오류(✕)가 있는 {rows.length - readyCount}개는 등록되지 않습니다.</span>}
           </div>
         </div>
       )}
+      <datalist id="site-options">{GANGNAM_SITES.map((x) => <option key={x.id} value={x.label} />)}</datalist>
       <style>{`.inp{width:100%;border:1px solid var(--color-line-2);border-radius:5px;padding:4px 7px;font-size:12.5px;background:#fff}`}</style>
     </div>
   );

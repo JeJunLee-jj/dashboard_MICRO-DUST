@@ -8,10 +8,12 @@ import { HazardPage } from "./pages/Hazard";
 import { SamplesPage } from "./pages/Samples";
 import { DataPage } from "./pages/Data";
 import { SettingsPage } from "./pages/Settings";
+import { SimulatorPage } from "./pages/Simulator";
 
 export function App() {
   const { route } = useStore();
   const page = {
+    simulator: <SimulatorPage />,
     overview: <OverviewPage />,
     particles: <ParticlesPage />,
     eds: <EdsPage />,

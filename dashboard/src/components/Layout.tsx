@@ -3,14 +3,15 @@ import { hrefFor, useStore, type Route } from "../state/store";
 import { DemoTag } from "./ui";
 
 const NAV: Array<{ page: Route["page"]; label: string; n: number }> = [
-  { page: "overview", label: "종합 대시보드", n: 1 },
-  { page: "particles", label: "SEM 이미지·입자 탐색", n: 2 },
-  { page: "eds", label: "EDS 원소 조성 분석", n: 3 },
-  { page: "integration", label: "형태–성분 통합 분석", n: 4 },
-  { page: "hazard", label: "위해성 관련 원소 분포", n: 5 },
-  { page: "samples", label: "시료·채취 지점 비교", n: 6 },
-  { page: "data", label: "데이터 업로드·품질 검증", n: 7 },
-  { page: "settings", label: "분석 설정·결과 내보내기", n: 8 },
+  { page: "simulator", label: "위치별 기준 시뮬레이터", n: 1 },
+  { page: "overview", label: "종합 대시보드", n: 2 },
+  { page: "particles", label: "SEM 이미지·입자 탐색", n: 3 },
+  { page: "eds", label: "EDS 원소 조성 분석", n: 4 },
+  { page: "integration", label: "형태–성분 통합 분석", n: 5 },
+  { page: "hazard", label: "위해성 관련 원소 분포", n: 6 },
+  { page: "samples", label: "시료·채취 지점 비교", n: 7 },
+  { page: "data", label: "데이터 업로드·품질 검증", n: 8 },
+  { page: "settings", label: "분석 설정·결과 내보내기", n: 9 },
 ];
 
 /** 웹 배포판(GitHub Pages)에 함께 올라간 오프라인판이 있으면 내려받기 링크를 보여준다 */
@@ -33,7 +34,7 @@ export function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-full flex">
       <aside className="w-[248px] shrink-0 bg-[#ece9e2] border-r border-line-2 flex flex-col sticky top-0 h-screen no-print max-lg:hidden">
-        <a href={hrefFor({ page: "overview" })} className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-line-2">
+        <a href={hrefFor({ page: "simulator" })} className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-line-2">
           <svg aria-hidden width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#282828" strokeWidth="1.4">
             <path d="M15 3 26 9v12l-11 6L4 21V9z" />
             <path d="M4 9l11 6 11-6M15 15v12" />

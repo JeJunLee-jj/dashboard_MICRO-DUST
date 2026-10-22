@@ -7,14 +7,15 @@ import { useStore } from "../state/store";
 
 /** 페이지 번호·영문 표제(도면 표제란처럼 작게) */
 const PAGE_EYEBROW: Record<string, string> = {
-  overview: "01 — Overview",
-  particles: "02 — SEM Particles",
-  eds: "03 — EDS Composition",
-  integration: "04 — Morphology × Composition",
-  hazard: "05 — Hazard Elements",
-  samples: "06 — Samples & Sites",
-  data: "07 — Data & Quality",
-  settings: "08 — Settings & Export",
+  simulator: "01 — Site Criteria Simulator",
+  overview: "02 — Overview",
+  particles: "03 — SEM Particles",
+  eds: "04 — EDS Composition",
+  integration: "05 — Morphology × Composition",
+  hazard: "06 — Hazard Elements",
+  samples: "07 — Samples & Sites",
+  data: "08 — Data & Quality",
+  settings: "09 — Settings & Export",
 };
 
 export function Card({ title, subtitle, actions, children, className = "", id }: { title?: ReactNode; subtitle?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string; id?: string }) {
