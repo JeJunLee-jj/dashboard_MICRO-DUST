@@ -17,14 +17,14 @@ import { DEMO_FILES } from "../lib/bundledFiles";
 import { applyFilters } from "../lib/filters";
 import { colorOrder } from "../lib/viewModels";
 import type { Unmatched } from "../lib/join";
-import { DEFAULT_SIM, normalizeSim, type SimSettings } from "../lib/criteria";
+import { DEFAULT_SIM, normalizeSim, type SimSettings } from "../lib/sources";
 
 const LS = {
   settings: "semeds.settings.v1",
   hazard: "semeds.hazardRules.v1",
   rules: "semeds.classRules.v1",
   overrides: "semeds.overrides.v1",
-  sim: "semeds.sim.v1",
+  sim: "semeds.sim.v2",
 };
 function readLS<T>(key: string, fallback: T): T {
   try {
@@ -43,14 +43,14 @@ function writeLS(key: string, v: unknown) {
 }
 
 export interface Route {
-  page: "simulator" | "overview" | "particles" | "eds" | "integration" | "hazard" | "samples" | "data" | "settings";
+  page: "simulator" | "particles" | "data";
   particleKey?: string;
 }
 
 function parseHash(): Route {
   const h = decodeURIComponent(window.location.hash.replace(/^#\/?/, ""));
   const [page, ...rest] = h.split("/");
-  const pages: Route["page"][] = ["simulator", "overview", "particles", "eds", "integration", "hazard", "samples", "data", "settings"];
+  const pages: Route["page"][] = ["simulator", "particles", "data"];
   const p = (pages as string[]).includes(page) ? (page as Route["page"]) : "simulator";
   return { page: p, particleKey: p === "particles" && rest.length ? rest.join("/") : undefined };
 }
@@ -84,7 +84,7 @@ interface Store {
   clearData(): void;
   uploadFiles(files: File[], forced?: TableKind): Promise<{ ok: number; failed: string[] }>;
   /** 이미지 + EDS 한 쌍을 입자로 등록. 등록된 입자 키 목록을 돌려준다 */
-  registerParticles(inputs: PairInput[]): string[];
+  registerParticles(inputs: PairInput[], opts?: { replace?: boolean }): string[];
   /** 입자 메타데이터 일부 수정(이미지 측정값 저장 등) */
   updateMeta(key: string, patch: Partial<ParticleMeta>): void;
   /** 여러 입자 메타데이터를 한 번에 수정(일괄 측정) */
@@ -291,13 +291,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }) }));
   }, []);
 
-  const registerParticles = useCallback((inputs: PairInput[]) => {
+  const registerParticles = useCallback((inputs: PairInput[], opts?: { replace?: boolean }) => {
     const results = inputs.map(buildParticleFromPair);
     const now = new Date().toISOString();
     setData((d) => {
       // DEMO 위에 실제 데이터를 섞지 않는다
-      const base: DatasetState = d.origin === "demo" ? { ...EMPTY_DATASET, overrides: Object.fromEntries(Object.entries(d.overrides).filter(([k]) => !k.startsWith("DEMO"))) } : d;
-      if (d.origin === "demo") revokeImages(d.images);
+      const fresh = d.origin === "demo" || !!opts?.replace;
+      const base: DatasetState = fresh ? { ...EMPTY_DATASET, overrides: {} } : d;
+      if (fresh) revokeImages(d.images);
       const images = [...base.images];
       const metas = results.map((r) => r.meta);
       inputs.forEach((inp, i) => {

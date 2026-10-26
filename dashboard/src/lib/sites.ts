@@ -16,7 +16,7 @@ export interface SiteDef {
 }
 
 export const GANGNAM_SITES: SiteDef[] = [
-  { id: "gate", label: "개찰구 (D구역)", short: "개찰구", zone: "D구역", pattern: /개찰구|게이트|\bgate\b|D\s*-?\s*구역/i, x: 0.5425, y: 0.4851 },
+  { id: "gate", label: "개찰구 (D구역)", short: "개찰구", zone: "D구역", pattern: /개찰구|게이트|\bgate\b|D\s*-?\s*구역|(?<![A-Za-z0-9])D(?![A-Za-z0-9-])/, x: 0.5425, y: 0.4851 },
   { id: "food", label: "음식점 (B-28)", short: "음식점", zone: "B-28", pattern: /음식점|식당|restaurant|(?<![A-Za-z0-9])B\s*-?\s*28(?!\d)/i, x: 0.408, y: 0.6775 },
   { id: "cafe", label: "카페·간편식 (E-43)", short: "카페", zone: "E-43", pattern: /카페|간편식|\bcafe\b|(?<![A-Za-z0-9])E\s*-?\s*43(?!\d)/i, x: 0.409, y: 0.2758 },
   { id: "cosmetic", label: "화장품 (F-1)", short: "화장품", zone: "F-1", pattern: /화장품|cosmetic|(?<![A-Za-z0-9])F\s*-?\s*1(?![\d.])/i, x: 0.2575, y: 0.4611 },

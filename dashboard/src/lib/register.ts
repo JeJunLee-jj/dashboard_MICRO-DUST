@@ -11,9 +11,9 @@ export interface PairMeasurement {
   eqdUm: number | null;
   areaUm2: number | null;
   feretUm: number | null;
-  circularity: number;
-  solidity: number;
-  aspectRatio: number;
+  circularity: number | null;
+  solidity: number | null;
+  aspectRatio: number | null;
   methodLabel: string;
 }
 
@@ -32,6 +32,8 @@ export interface PairInput {
   edsName: string | null;
   edsTable: Table | null;
   measurement: PairMeasurement | null;
+  /** EDS 스폿별 wt%(원소 → 스폿 값들) — 여러 스폿을 평균해 등록할 때 */
+  spotWt?: Record<string, number[]> | null;
 }
 
 export interface PairResult {
@@ -128,6 +130,7 @@ export function buildParticleFromPair(input: PairInput): PairResult {
     instrument: inst?.instrument ?? null,
     acquired_at: local ? `${local.date} ${local.time}` : null,
     sample_type: input.sample_type,
+    spot_wt: input.spotWt ?? null,
     analysis_conditions: conditions,
     notes: input.notes,
     sourceFile: [input.image?.filename, input.edsName].filter(Boolean).join(" + ") || "등록 화면",

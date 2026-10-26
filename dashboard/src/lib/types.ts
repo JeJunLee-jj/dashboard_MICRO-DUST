@@ -69,6 +69,8 @@ export interface ParticleMeta {
   detector?: string | null;
   instrument?: string | null;
   acquired_at?: string | null;        // 지역 시각 "YYYY-MM-DD HH:MM"
+  /** EDS 스폿별 wt%(원소 → [스폿1, 스폿2, 스폿3]) — 스폿 여러 곳을 평균해 등록한 경우 */
+  spot_wt?: Record<string, number[]> | null;
   sample_type: string | null;          // 예: 측정, 배경(외기), 블랭크 — 선택
   analysis_conditions: string | null;
   notes: string | null;

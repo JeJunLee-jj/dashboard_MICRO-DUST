@@ -3,15 +3,9 @@ import { hrefFor, useStore, type Route } from "../state/store";
 import { DemoTag } from "./ui";
 
 const NAV: Array<{ page: Route["page"]; label: string; n: number }> = [
-  { page: "simulator", label: "위치별 기준 시뮬레이터", n: 1 },
-  { page: "overview", label: "종합 대시보드", n: 2 },
-  { page: "particles", label: "SEM 이미지·입자 탐색", n: 3 },
-  { page: "eds", label: "EDS 원소 조성 분석", n: 4 },
-  { page: "integration", label: "형태–성분 통합 분석", n: 5 },
-  { page: "hazard", label: "위해성 관련 원소 분포", n: 6 },
-  { page: "samples", label: "시료·채취 지점 비교", n: 7 },
-  { page: "data", label: "데이터 업로드·품질 검증", n: 8 },
-  { page: "settings", label: "분석 설정·결과 내보내기", n: 9 },
+  { page: "simulator", label: "AI 시뮬레이터", n: 1 },
+  { page: "particles", label: "입자 목록", n: 2 },
+  { page: "data", label: "데이터 관리", n: 3 },
 ];
 
 /** 웹 배포판(GitHub Pages)에 함께 올라간 오프라인판이 있으면 내려받기 링크를 보여준다 */
