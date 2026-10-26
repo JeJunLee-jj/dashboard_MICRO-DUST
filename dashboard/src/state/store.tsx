@@ -18,6 +18,7 @@ import { applyFilters } from "../lib/filters";
 import { colorOrder } from "../lib/viewModels";
 import type { Unmatched } from "../lib/join";
 import { DEFAULT_SIM, normalizeSim, type SimSettings } from "../lib/sources";
+import { matchSiteText } from "../lib/sites";
 
 const LS = {
   settings: "semeds.settings.v1",
@@ -206,7 +207,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const shared = await loadSharedDataset().catch(() => null);
       sharedRef.current = shared;
       if (shared) setSharedInfo({ savedAt: shared.savedAt, note: shared.note, particles: shared.state.meta.length, images: shared.state.images.length });
-      if (own && own.state.origin === "user") {
+      // 이 브라우저에 저장된 내 데이터가 비어 있거나, 5개 지점 입자가 없는 예전 데이터인데 더 최신 공유 데이터셋이 있으면
+      // 공유 데이터셋을 먼저 보여준다(내 데이터는 '저장된 내 데이터 다시 열기'로 계속 열 수 있음).
+      const ownHasSites = !!own?.state.meta.some((m) => matchSiteText(m.collection_location) || matchSiteText(m.sample_id));
+      const ownUsable = !!own && own.state.origin === "user" && own.state.meta.length > 0 &&
+        (!shared || ownHasSites || new Date(own.savedAt) > new Date(shared.savedAt));
+      if (own && ownUsable) {
         setData((d) => (d.origin ? d : { ...own.state, overrides: { ...own.state.overrides, ...d.overrides } }));
         setPersist({ status: "restored", savedAt: own.savedAt, hasSaved: true });
       } else if (shared) {
@@ -216,7 +222,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         } catch {
           /* 무시 */
         }
-        applyShared(shared, firstVisit);
+        applyShared(shared, firstVisit || !ownHasSites);
+        if (own) setPersist({ status: "idle", hasSaved: true });
       }
       restoreDone.current = true;
     })();

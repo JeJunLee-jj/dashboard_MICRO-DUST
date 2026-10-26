@@ -96,6 +96,7 @@ export function SimulatorPage() {
       <>
         <PageHeader title="AI 시뮬레이터" />
         <Notice kind="warning" title="데이터가 없습니다">
+          {sharedInfo ? <>강남역 5개 지점 데이터(팀 공유 데이터셋, 입자 {sharedInfo.particles}개)를 열 수 있습니다. <Button small variant="primary" onClick={() => loadShared()}>공유 데이터셋 열기</Button> 또는 </> : null}
           <a className="text-accent underline" href={hrefFor({ page: "data" })}>데이터 관리</a>에서 Phenom 원본 폴더를 올려 주세요.
         </Notice>
       </>

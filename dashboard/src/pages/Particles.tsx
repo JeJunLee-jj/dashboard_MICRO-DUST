@@ -7,9 +7,9 @@ import { SOURCE_RULES, judgeParticle } from "../lib/sources";
 import { ParticleDetail } from "./ParticleDetail";
 
 export function ParticlesPage() {
-  const { route, particles } = useStore();
+  const { route, particles, sharedInfo, loadShared } = useStore();
   if (!particles.length) {
-    return (<><PageHeader title="입자 목록" /><Notice kind="warning">데이터가 없습니다. <a className="text-accent underline" href={hrefFor({ page: "data" })}>데이터 관리</a>에서 원본 폴더를 올려 주세요.</Notice></>);
+    return (<><PageHeader title="입자 목록" /><Notice kind="warning">데이터가 없습니다. {sharedInfo && <button className="text-accent underline mr-1" onClick={() => loadShared()}>팀 공유 데이터셋 열기</button>}또는 <a className="text-accent underline" href={hrefFor({ page: "data" })}>데이터 관리</a>에서 원본 폴더를 올려 주세요.</Notice></>);
   }
   if (route.particleKey) return <ParticleDetail key={route.particleKey} particleKey={route.particleKey} />;
   return <Gallery />;

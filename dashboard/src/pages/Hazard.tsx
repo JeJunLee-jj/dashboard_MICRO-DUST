@@ -25,7 +25,7 @@ function cellOf(ps: Particle[], el: string): Cell {
 }
 
 export function HazardPage() {
-  const { particles, settings, sim } = useStore();
+  const { particles, settings, sim, sharedInfo, loadShared } = useStore();
   const groups = useMemo(() => {
     const js = particles.map((p) => judgeParticle(p, sim.config, settings));
     const inRange = (j: (typeof js)[number]) => j.inSize === true && j.particle.edsValid;
@@ -45,7 +45,7 @@ export function HazardPage() {
   const siteList = detected.map((e) => ({ el: e.el, c: e.cells[site.id] })).filter((x) => x.c.k > 0).sort((a, b) => b.c.k / b.c.n - a.c.k / a.c.n);
   const info = ELEMENT_HAZARD[el];
 
-  if (!particles.length) return (<><PageHeader title="지점별 원소 위해성" /><Notice kind="warning">데이터가 없습니다. <a className="text-accent underline" href={hrefFor({ page: "data" })}>데이터 관리</a>에서 올려 주세요.</Notice></>);
+  if (!particles.length) return (<><PageHeader title="지점별 원소 위해성" /><Notice kind="warning">데이터가 없습니다. {sharedInfo && <button className="text-accent underline mr-1" onClick={() => loadShared()}>팀 공유 데이터셋 열기</button>}또는 <a className="text-accent underline" href={hrefFor({ page: "data" })}>데이터 관리</a>에서 올려 주세요.</Notice></>);
 
   return (
     <>
