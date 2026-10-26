@@ -6,6 +6,7 @@ import { hrefFor, useStore } from "../state/store";
 import { Button, Card, Notice, PageHeader } from "../components/ui";
 import { SiteMap, type MapItem } from "../components/SiteMap";
 import { atomicOrder, elementNameKo } from "../lib/elements";
+import { SiteLiteratureBlock } from "../components/LiteratureList";
 import {
   DEFAULT_SIM_CONFIG, SOURCE_RULES, THRESHOLD_LABELS, missingIndicators, ruleText, simulate, siteAdvice,
   type ParticleJudgement, type Rate, type RuleStat, type SimConfig, type SourceRule,
@@ -176,7 +177,7 @@ export function SimulatorPage() {
         </Card>
 
         <Card title={`${site.site.label} — 판단`} subtitle={`분석 대상 ${site.judged.length}개 (전체 ${site.total}개 중 ${cfg.applySize ? `최대 길이 ${cfg.sizeMin}~${cfg.sizeMax} µm` : "크기 제한 없음"})`}>
-          <SiteJudgement siteName={site.site.short} expected={advice.expected} priority={advice.priority} needN={advice.needN} n={site.judged.length} missing={missing.filter((m) => m.rules.some((r) => r.siteId === site.site.id))} />
+          <SiteJudgement siteId={site.site.id} siteName={site.site.short} expected={advice.expected} priority={advice.priority} needN={advice.needN} n={site.judged.length} missing={missing.filter((m) => m.rules.some((r) => r.siteId === site.site.id))} />
         </Card>
       </div>
 
@@ -270,7 +271,8 @@ export function SimulatorPage() {
   );
 }
 
-function SiteJudgement({ siteName, expected, priority, needN, n, missing }: {
+function SiteJudgement({ siteId, siteName, expected, priority, needN, n, missing }: {
+  siteId: string;
   siteName: string;
   expected: Array<{ rule: SourceRule; stat: RuleStat }>;
   priority: Array<{ rule: SourceRule; stat: RuleStat }>;
@@ -303,6 +305,10 @@ function SiteJudgement({ siteName, expected, priority, needN, n, missing }: {
             ))}
           </ul>
         )}
+      </section>
+      <section>
+        <h4 className="font-semibold mb-1">관련 선행연구(건강 영향)</h4>
+        <SiteLiteratureBlock siteId={siteId} compact />
       </section>
       <section>
         <h4 className="font-semibold mb-1">추가 분석 판단</h4>

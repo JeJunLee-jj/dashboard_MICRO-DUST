@@ -9,6 +9,8 @@ import { ELEMENT_HAZARD, FILTER_ELEMENTS } from "../config/elementHazard";
 import { elementNameKo } from "../lib/elements";
 import { wilson } from "../lib/stats";
 import type { Particle } from "../lib/types";
+import { LitItems, SiteLiteratureBlock } from "../components/LiteratureList";
+import { BACKGROUND_LITERATURE } from "../config/siteLiterature";
 
 interface Cell { k: number; n: number; meanWt: number | null; maxWt: number | null }
 const LEVEL_STYLE: Record<number, { label: string; cls: string }> = {
@@ -126,6 +128,18 @@ export function HazardPage() {
             })}
           </div>
           {FILTER_ELEMENTS.has(el) && <p className="text-[12.5px] text-[#6b4b00] mt-2">주의: {el}는 유리섬유 필터에서도 검출될 수 있어, 낮은 함량의 검출은 필터 신호일 수 있습니다.</p>}
+        </Card>
+      </div>
+
+      <div className="mt-4">
+        <Card title={`선행연구 — ${site.full}의 발생원과 건강 영향`} subtitle="연구진이 정리한 지점별 문헌입니다. 위의 '지점별 위해 원소'에서 지점을 바꾸면 함께 바뀝니다. 위해성은 그 발생원·화학종에서 보고된 사례이며 우리 입자의 위해 정도를 뜻하지 않습니다.">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-6">
+            <SiteLiteratureBlock siteId={site.id} />
+            <div>
+              <div className="text-[13px] font-semibold mb-1.5">대상지 배경</div>
+              <LitItems items={BACKGROUND_LITERATURE} />
+            </div>
+          </div>
         </Card>
       </div>
 

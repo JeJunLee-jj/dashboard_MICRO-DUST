@@ -17,7 +17,7 @@ const EXTRA: Record<string, HealthInfo> = {
   Ti: {
     target_organs: "호흡기(폐)",
     health_effects: "이산화티타늄(TiO₂) 분진은 IARC 2B군(인체 발암 가능)으로 분류된다. 고농도 흡입 시 폐 염증과 관련된 동물 실험 근거가 있으며, 화장품·도료·섬유 첨가제로 널리 쓰인다.",
-    health_references: `IARC Monographs Vol. 93 — Titanium dioxide | ${IARC}`,
+    health_references: `IARC Monographs Vol. 93 — Titanium dioxide | ${IARC} ; OEHHA Proposition 65 — 호흡성 TiO₂ | https://www.p65warnings.ca.gov/fact-sheets/titanium-dioxide-airborne-unbound-particles-respirable-size`,
   },
   Ba: {
     target_organs: "호흡기, 심혈관·신경계(가용성 화합물)",
@@ -27,7 +27,7 @@ const EXTRA: Record<string, HealthInfo> = {
   Sb: {
     target_organs: "호흡기, 심혈관계",
     health_effects: "3가 안티몬 화합물은 IARC 2A군(인체 발암 추정)으로 분류된다. 직업적 흡입 노출에서 호흡기 자극과 진폐가 보고되었다. 브레이크 패드 마모 지표 원소다.",
-    health_references: `IARC Monographs Vol. 131 | ${IARC} ; ATSDR Toxicological Profile for Antimony | ${ATSDR}`,
+    health_references: `IARC Monographs Vol. 131 | ${IARC} ; ATSDR Toxicological Profile for Antimony | ${ATSDR} ; von Uexküll et al. (2005) 브레이크 패드의 안티몬 | https://www.globalcommunity.org/business/Antimony%20in%20Brake%20Pads%20-%20Jnl%20of%20Cleaner%20Production%20-%202005.pdf`,
   },
 };
 
