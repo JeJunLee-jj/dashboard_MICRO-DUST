@@ -15,6 +15,10 @@ export interface MapItem {
   pct: number | null;
   /** 이 지점이 선택한 규칙의 '예상 지점'인지 */
   expected: boolean;
+  /** 원 아래에 붙일 이름(대표 판정 모드: 가장 많이 해당한 입자 유형) */
+  caption?: string;
+  /** 원 색(지정하지 않으면 비율에 따른 주황 단계) */
+  color?: string;
 }
 
 export function SiteMap({ items, sim, setSim, selected, onSelect, editing }: {
@@ -58,12 +62,12 @@ export function SiteMap({ items, sim, setSim, selected, onSelect, editing }: {
     >
       <image href={plan.url} x={0} y={0} width={W} height={H} preserveAspectRatio="xMidYMid meet" />
       <rect x={0} y={0} width={W} height={H} fill="#ffffff" opacity={0.5} />
-      {items.map(({ site: s, k, n, pct, expected }) => {
+      {items.map(({ site: s, k, n, pct, expected, caption, color }) => {
         const pos = sim.positions[s.id] ?? { x: s.x, y: s.y };
         const cx = pos.x * W, cy = pos.y * H;
         const rad = 15 + 13 * Math.sqrt(n / maxN);
         const empty = n === 0;
-        const dark = !empty && (pct ?? 0) >= 45;
+        const dark = !empty && (color ? true : (pct ?? 0) >= 45);
         const isSel = selected === s.id;
         const tag = `${s.short} ${s.zone}`;
         const tagW = 15 + tag.length * 10.5;
@@ -80,7 +84,7 @@ export function SiteMap({ items, sim, setSim, selected, onSelect, editing }: {
           >
             <title>{`${s.label}: ${k}/${n}`}</title>
             {isSel && <circle cx={cx} cy={cy} r={rad + 6} fill="none" stroke="#282828" strokeWidth={2.5} />}
-            <circle cx={cx} cy={cy} r={rad} fill={empty ? "#fff" : seqColor((pct ?? 0) / 100)} stroke={expected ? "#282828" : "#73290f"}
+            <circle cx={cx} cy={cy} r={rad} fill={empty ? "#fff" : color ?? seqColor((pct ?? 0) / 100)} stroke={expected ? "#282828" : "#73290f"}
               strokeWidth={expected ? 3 : 1.5} strokeDasharray={empty ? "4 3" : undefined} />
             <text x={cx} y={cy + 6} textAnchor="middle" fontSize={empty ? 12 : 17} fontWeight={700} fill={dark ? "#fff" : "#282828"} className="tnum">
               {empty ? "없음" : `${Math.round(pct ?? 0)}%`}
@@ -92,6 +96,9 @@ export function SiteMap({ items, sim, setSim, selected, onSelect, editing }: {
             <text x={cx} y={cy + rad + 15} textAnchor="middle" fontSize={12.5} fontWeight={600} fill="#282828" stroke="#fff" strokeWidth={3} paintOrder="stroke" className="tnum">
               {k}/{n}
             </text>
+            {caption && (
+              <text x={cx} y={cy + rad + 31} textAnchor="middle" fontSize={13} fontWeight={700} fill={color ?? "#282828"} stroke="#fff" strokeWidth={3.5} paintOrder="stroke">{caption}</text>
+            )}
           </g>
         );
       })}

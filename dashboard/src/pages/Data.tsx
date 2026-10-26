@@ -31,7 +31,7 @@ export function DataPage() {
             {bySite.map(({ s, n, photo, eds, ar }) => (
               <tr key={s.id}><td>{s.label}</td><td className="num">{n}</td><td className="num">{photo}</td><td className="num">{eds}</td><td className="num">{ar}</td></tr>
             ))}
-            {other > 0 && <tr className="text-ink-3"><td>지점 미지정</td><td className="num">{other}</td><td /><td /><td /></tr>}
+            {other > 0 && <tr className="text-ink-3"><td>그 밖(공기청정기 포집 등, 참고)</td><td className="num">{other}</td><td /><td /><td /></tr>}
           </tbody>
         </table>
         <p className="text-[13px] text-ink-2 mt-2 leading-relaxed">

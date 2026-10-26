@@ -18,8 +18,10 @@ export function ParticlesPage() {
 function Gallery() {
   const { particles, settings, sim } = useStore();
   const [site, setSite] = useState<string>("all");
-  const rows = useMemo(() => particles.map((p) => judgeParticle(p, sim.config, settings)).filter((j) => site === "all" || j.site?.id === site), [particles, settings, sim, site]);
-  const tabs = [{ id: "all", label: `전체 ${particles.length}` }, ...GANGNAM_SITES.map((s) => ({ id: s.id, label: `${s.short} ${particles.filter((p) => judgeParticle(p, sim.config, settings).site?.id === s.id).length}` }))];
+  const rows = useMemo(() => particles.map((p) => judgeParticle(p, sim.config, settings)).filter((j) => site === "all" || (site === "other" ? !j.site : j.site?.id === site)), [particles, settings, sim, site]);
+  const nOther = particles.filter((p) => !judgeParticle(p, sim.config, settings).site).length;
+  const tabs = [{ id: "all", label: `전체 ${particles.length}` }, ...GANGNAM_SITES.map((s) => ({ id: s.id, label: `${s.short} ${particles.filter((p) => judgeParticle(p, sim.config, settings).site?.id === s.id).length}` })),
+    ...(nOther ? [{ id: "other", label: `공기청정기 등(참고) ${nOther}` }] : [])];
   return (
     <>
       <PageHeader title="입자 목록" description="지점별 SEM 입자 사진과 판정 결과입니다. 회색 테두리 = 분석 크기 범위 밖(최대 길이 기준)." />

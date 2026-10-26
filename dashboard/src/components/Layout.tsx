@@ -4,8 +4,9 @@ import { DemoTag } from "./ui";
 
 const NAV: Array<{ page: Route["page"]; label: string; n: number }> = [
   { page: "simulator", label: "AI 시뮬레이터", n: 1 },
-  { page: "particles", label: "입자 목록", n: 2 },
-  { page: "data", label: "데이터 관리", n: 3 },
+  { page: "hazard", label: "지점별 원소 위해성", n: 2 },
+  { page: "particles", label: "입자 목록", n: 3 },
+  { page: "data", label: "데이터 관리", n: 4 },
 ];
 
 /** 웹 배포판(GitHub Pages)에 함께 올라간 오프라인판이 있으면 내려받기 링크를 보여준다 */

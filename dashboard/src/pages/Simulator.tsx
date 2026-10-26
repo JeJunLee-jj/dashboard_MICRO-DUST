@@ -16,9 +16,11 @@ const kn = (r: Rate | null | undefined) => (r && r.n ? `${r.k}/${r.n}` : "—");
 const ruleById = (id: string) => SOURCE_RULES.find((r) => r.id === id)!;
 
 export function SimulatorPage() {
-  const { particles, settings, sim, setSim } = useStore();
+  const { particles, settings, sim, setSim, sharedInfo, data, loadShared } = useStore();
   const cfg = sim.config;
   const setCfg = (p: Partial<SimConfig>) => setSim((s) => ({ ...s, config: { ...s.config, ...p } }));
+  /** "top" = 지점별 대표 판정(가장 많이 해당한 유형), 그 밖 = 규칙 id */
+  const [mapMode, setMapMode] = useState<string>("top");
   const [ruleId, setRuleId] = useState("rail");
   const [siteId, setSiteId] = useState("gate");
   const [editing, setEditing] = useState(false);
@@ -69,6 +71,14 @@ export function SimulatorPage() {
         description="선행연구에서 제시된 발생원별 지표 조건을 규칙으로 구성하여, 입자마다 조성과 형상 조건을 동시에 적용해 발생원을 판정하고 보고된 건강 영향을 연결합니다. 판정 결과는 지점별로 집계해 지하상가 평면도에 표시합니다."
       />
 
+      {res.sites.every((x) => x.total === 0) && (
+        <div className="mb-4">
+          <Notice kind="warning" title="지금 화면의 데이터에는 5개 지점 입자가 없습니다">
+            이 브라우저에 예전에 저장한 데이터(입자 {particles.length}개)가 열려 있습니다.
+            {sharedInfo && !data.shared ? <> 강남역 5개 지점 데이터(팀 공유 데이터셋, 입자 {sharedInfo.particles}개)를 보려면 <Button small variant="primary" onClick={() => loadShared()}>공유 데이터셋 열기</Button></> : <> <a className="text-accent underline" href={hrefFor({ page: "data" })}>데이터 관리</a>에서 원본 폴더를 올려 주세요.</>}
+          </Notice>
+        </div>
+      )}
       <ol className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-4 text-[13.5px]">
         {[
           ["문헌 규칙", `발생원 ${new Set(SOURCE_RULES.map((r) => r.source)).size}종 · 판정 규칙 ${SOURCE_RULES.length}개`],
@@ -87,19 +97,33 @@ export function SimulatorPage() {
       {/* 지도 + 지점 판단 */}
       <div className="grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_440px] gap-4">
         <Card
-          title="지하상가 평면도 — 판정 비율"
-          subtitle={<>원 안 숫자 = 선택한 규칙에 해당하는 입자 비율, 원 아래 = 해당/판정 가능 입자 수. 굵은 테두리 = 이 발생원이 예상되는 지점. 원을 누르면 오른쪽에 그 지점의 판단이 나옵니다.</>}
+          title={mapMode === "top" ? "지하상가 평면도 — 지점별 대표 판정" : `지하상가 평면도 — ${rule.source} · ${rule.label}`}
+          subtitle={mapMode === "top"
+            ? <>원 안 숫자 = 그 지점 분석 입자 중 <b>가장 많이 해당한 입자 유형</b>의 비율, 원 아래 = 해당/판정 가능 입자 수와 그 유형 이름. 원을 누르면 오른쪽에 그 지점의 판단이 나옵니다.</>
+            : <>원 안 숫자 = 그 지점 분석 입자 중 <b>{rule.label}</b>({ruleText(rule, cfg.thresholds)})에 해당하는 입자의 비율. 굵은 테두리 = 이 발생원이 예상되는 지점. 0%는 해당 입자가 하나도 없었다는 뜻입니다.</>}
           actions={
-            <select className="border border-line-2 rounded-[3px] px-2 py-1 text-[13.5px] bg-white" value={ruleId} onChange={(e) => setRuleId(e.target.value)} aria-label="지도에 표시할 규칙">
-              {SOURCE_RULES.map((r) => <option key={r.id} value={r.id}>{r.source} · {r.label}</option>)}
+            <select className="border border-line-2 rounded-[3px] px-2 py-1 text-[13.5px] bg-white" value={mapMode} onChange={(e) => { setMapMode(e.target.value); if (e.target.value !== "top") setRuleId(e.target.value); }} aria-label="지도에 표시할 내용">
+              <option value="top">지점별 대표 판정(가장 많이 해당한 유형)</option>
+              {SOURCE_RULES.map((r) => <option key={r.id} value={r.id}>{r.source} · {r.label} 비율</option>)}
             </select>
           }
         >
           <SiteMap
-            items={res.sites.map((s) => ({ site: s.site, k: s.rules[ruleId].k, n: s.rules[ruleId].n, pct: s.rules[ruleId].pct, expected: rule.siteId === s.site.id }))}
+            items={res.sites.map((s) => {
+              if (mapMode !== "top") return { site: s.site, k: s.rules[ruleId].k, n: s.rules[ruleId].n, pct: s.rules[ruleId].pct, expected: rule.siteId === s.site.id };
+              const best = SOURCE_RULES.map((r) => ({ r, st: s.rules[r.id] })).filter((x) => x.st.k > 0).sort((a, b) => (b.st.pct ?? 0) - (a.st.pct ?? 0))[0];
+              return best
+                ? { site: s.site, k: best.st.k, n: best.st.n, pct: best.st.pct, expected: false, caption: best.r.label, color: best.r.color }
+                : { site: s.site, k: 0, n: s.judged.length, pct: 0, expected: false, caption: "해당 유형 없음" };
+            })}
             sim={sim} setSim={setSim} selected={siteId} onSelect={setSiteId} editing={editing}
           />
-          <div className="mt-2 text-[13px] text-ink-2"><b>{rule.label}</b> 판정 조건: {ruleText(rule, cfg.thresholds)}</div>
+          {mapMode === "top" && (
+            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[12.5px] text-ink-2">
+              {SOURCE_RULES.map((r) => <span key={r.id} className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 inline-block" style={{ background: r.color }} />{r.label}</span>)}
+            </div>
+          )}
+          <p className="text-[12.5px] text-[#6b4b00] mt-1.5">주의: Ti·Zn, Na·Cl, Si는 유리섬유 필터에서도 검출될 수 있어 해당 유형(Ti 또는 Zn 함유, Na-Cl)은 실제보다 높게 판정될 수 있습니다. 원소 함량이 낮은 판정은 입자 상세에서 스폿 값을 확인하세요.</p>
           <div className="flex flex-wrap items-center gap-2 mt-2 text-[13px]">
             <Button small variant={editing ? "primary" : "default"} onClick={() => setEditing((v) => !v)}>{editing ? "위치 옮기기 끝" : "마커 위치 옮기기"}</Button>
             <Button small onClick={() => planInput.current?.click()}>다른 평면도 올리기</Button>
@@ -130,7 +154,7 @@ export function SimulatorPage() {
                       const st = s.rules[r.id];
                       const exp = r.siteId === s.site.id;
                       return (
-                        <td key={s.site.id} className="num cursor-pointer" onClick={() => { setRuleId(r.id); setSiteId(s.site.id); }}
+                        <td key={s.site.id} className="num cursor-pointer" onClick={() => { setRuleId(r.id); setMapMode(r.id); setSiteId(s.site.id); }}
                           style={{ background: st.n && st.k ? seqColor((st.pct ?? 0) / 100) + "55" : undefined, outline: exp ? "2px solid #282828" : undefined, outlineOffset: -2 }}>
                           <div className="font-semibold">{pctTxt(st)}{st.p != null && st.p < 0.05 ? "*" : ""}</div>
                           <div className="text-[11.5px] text-ink-3">{kn(st)}{st.sub && st.k ? ` · ${r.sub!.label.split(" ")[0]} ${kn(st.sub)}` : ""}</div>
