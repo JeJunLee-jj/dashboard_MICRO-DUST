@@ -1,10 +1,11 @@
 /* 규칙 기반 AI 시뮬레이터(초록 ver1.1).
    ① 문헌 데이터베이스의 발생원별 지표 조건(규칙) → ② 입자별 조성·형상 조건 동시 적용(발생원 판정)
    → ③ 지점별 집계를 평면도에 표시 → ④ 우선 관리 입자와 추가 분석이 필요한 원소·지점 판단. */
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { hrefFor, useStore } from "../state/store";
 import { Button, Card, Notice, PageHeader } from "../components/ui";
-import { SiteMap } from "../components/SiteMap";
+import { SiteMap, type MapItem } from "../components/SiteMap";
+import { atomicOrder, elementNameKo } from "../lib/elements";
 import {
   DEFAULT_SIM_CONFIG, SOURCE_RULES, THRESHOLD_LABELS, missingIndicators, ruleText, simulate, siteAdvice,
   type ParticleJudgement, type Rate, type RuleStat, type SimConfig, type SourceRule,
@@ -16,23 +17,59 @@ const kn = (r: Rate | null | undefined) => (r && r.n ? `${r.k}/${r.n}` : "—");
 const ruleById = (id: string) => SOURCE_RULES.find((r) => r.id === id)!;
 
 export function SimulatorPage() {
-  const { particles, settings, sim, setSim, sharedInfo, data, loadShared } = useStore();
+  const { particles, settings, sim, setSim, sharedInfo, data, loadShared, allIssues } = useStore();
+  const feMissing = useMemo(() => new Set(allIssues.filter((i) => i.code === "FE_NOT_IN_ELEMENT_LIST" && i.particleKey).map((i) => i.particleKey!)), [allIssues]);
   const cfg = sim.config;
   const setCfg = (p: Partial<SimConfig>) => setSim((s) => ({ ...s, config: { ...s.config, ...p } }));
-  /** "top" = 지점별 대표 판정(가장 많이 해당한 유형), 그 밖 = 규칙 id */
-  const [mapMode, setMapMode] = useState<string>("top");
-  const [ruleId, setRuleId] = useState("rail");
+  /** 지도 표시: "el:Fe"(원소 검출 비율), "rule:rail"(입자 유형 비율), "top"(지점별 대표 판정) — 기본은 모든 지점을 같은 기준으로 */
+  const [mapMode, setMapMode] = useState<string>("el:Fe");
   const [siteId, setSiteId] = useState("gate");
   const [editing, setEditing] = useState(false);
   const planInput = useRef<HTMLInputElement>(null);
 
   const res = useMemo(() => simulate(particles, cfg, settings), [particles, cfg, settings]);
   const missing = useMemo(() => missingIndicators(particles), [particles]);
-  const rule = ruleById(ruleId);
   const site = res.sites.find((s) => s.site.id === siteId)!;
   const advice = siteAdvice(site);
   const nJudged = res.sites.reduce((a, s) => a + s.judged.length, 0);
   const nMatched = res.sites.reduce((a, s) => a + s.judged.filter((j) => j.matched.length).length, 0);
+  const dataElements = useMemo(() => [...new Set(res.sites.flatMap((s) => s.judged.flatMap((j) => Object.entries(j.particle.elements).filter(([, e]) => e.status === "detected" && (e.wt ?? 0) > 0).map(([el]) => el))))]
+    .sort((a, b) => atomicOrder(a) - atomicOrder(b)), [res]);
+
+  const mapView = useMemo((): { title: string; subtitle: ReactNode; items: MapItem[] } => {
+    if (mapMode.startsWith("el:")) {
+      const el = mapMode.slice(3);
+      return {
+        title: `${el}(${elementNameKo(el)}) 검출 입자 비율`,
+        subtitle: <>원 안 숫자 = 그 지점 분석 입자 중 <b>{el}가 검출된 입자</b>의 비율(스폿 3곳 중 한 곳 이상), 원 아래 = 검출 입자 수/분석 입자 수와 검출 입자의 평균 함량. 모든 지점이 같은 기준입니다.
+          {el === "Fe" && feMissing.size > 0 && <span className="block text-[#6b4b00] mt-1">주의: 화장품(F-1) 입자 {feMissing.size}개는 Phenom 원소 목록에 Fe가 빠진 채 정량되어, 화장품 지점의 Fe 비율은 실제보다 낮게 나옵니다.</span>}</>,
+        items: res.sites.map((s) => {
+          const ps = s.judged.filter((j) => j.particle.edsValid).map((j) => j.particle);
+          const wts = ps.map((p) => p.elements[el]).filter((e) => e && e.status === "detected" && (e.wt ?? 0) > 0).map((e) => e!.wt!);
+          const mean = wts.length ? wts.reduce((a, b) => a + b, 0) / wts.length : null;
+          return { site: s.site, k: wts.length, n: ps.length, pct: ps.length ? (wts.length / ps.length) * 100 : null, expected: false, caption: mean != null ? `평균 ${mean.toFixed(1)} wt%` : "미검출" };
+        }),
+      };
+    }
+    if (mapMode.startsWith("rule:")) {
+      const r = ruleById(mapMode.slice(5));
+      return {
+        title: `${r.label} 비율`,
+        subtitle: <>원 안 숫자 = 그 지점 분석 입자 중 <b>{r.label}</b>({ruleText(r, cfg.thresholds)})에 해당하는 입자의 비율, 원 아래 = 해당/판정 가능 입자 수. 굵은 테두리 = 이 발생원({r.source})이 예상되는 지점. 모든 지점이 같은 기준입니다.</>,
+        items: res.sites.map((s) => ({ site: s.site, k: s.rules[r.id].k, n: s.rules[r.id].n, pct: s.rules[r.id].pct, expected: r.siteId === s.site.id })),
+      };
+    }
+    return {
+      title: "지점별 대표 판정",
+      subtitle: <>원 안 숫자 = 그 지점에서 <b>가장 많이 해당한 입자 유형</b>의 비율(지점마다 기준이 달라 숫자끼리 비교하지 마세요), 원 아래 = 그 유형 이름.</>,
+      items: res.sites.map((s) => {
+        const best = SOURCE_RULES.map((r) => ({ r, st: s.rules[r.id] })).filter((x) => x.st.k > 0).sort((a, b) => (b.st.pct ?? 0) - (a.st.pct ?? 0))[0];
+        return best
+          ? { site: s.site, k: best.st.k, n: best.st.n, pct: best.st.pct, expected: false, caption: best.r.label, color: best.r.color }
+          : { site: s.site, k: 0, n: s.judged.length, pct: 0, expected: false, caption: "해당 유형 없음" };
+      }),
+    };
+  }, [mapMode, res, cfg.thresholds, feMissing]);
 
   const uploadPlan = async (file: File) => {
     const url = URL.createObjectURL(file);
@@ -97,27 +134,33 @@ export function SimulatorPage() {
       {/* 지도 + 지점 판단 */}
       <div className="grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_440px] gap-4">
         <Card
-          title={mapMode === "top" ? "지하상가 평면도 — 지점별 대표 판정" : `지하상가 평면도 — ${rule.source} · ${rule.label}`}
-          subtitle={mapMode === "top"
-            ? <>원 안 숫자 = 그 지점 분석 입자 중 <b>가장 많이 해당한 입자 유형</b>의 비율, 원 아래 = 해당/판정 가능 입자 수와 그 유형 이름. 원을 누르면 오른쪽에 그 지점의 판단이 나옵니다.</>
-            : <>원 안 숫자 = 그 지점 분석 입자 중 <b>{rule.label}</b>({ruleText(rule, cfg.thresholds)})에 해당하는 입자의 비율. 굵은 테두리 = 이 발생원이 예상되는 지점. 0%는 해당 입자가 하나도 없었다는 뜻입니다.</>}
+          title={`지하상가 평면도 — ${mapView.title}`}
+          subtitle={mapView.subtitle}
           actions={
-            <select className="border border-line-2 rounded-[3px] px-2 py-1 text-[13.5px] bg-white" value={mapMode} onChange={(e) => { setMapMode(e.target.value); if (e.target.value !== "top") setRuleId(e.target.value); }} aria-label="지도에 표시할 내용">
-              <option value="top">지점별 대표 판정(가장 많이 해당한 유형)</option>
-              {SOURCE_RULES.map((r) => <option key={r.id} value={r.id}>{r.source} · {r.label} 비율</option>)}
+            <select className="border border-line-2 rounded-[3px] px-2 py-1 text-[13.5px] bg-white max-w-[300px]" value={mapMode} onChange={(e) => setMapMode(e.target.value)} aria-label="지도에 표시할 기준">
+              <optgroup label="원소 — 검출된 입자 비율">
+                {dataElements.map((el) => <option key={el} value={`el:${el}`}>{el} ({elementNameKo(el)}) 검출 비율</option>)}
+              </optgroup>
+              <optgroup label="입자 유형 — 판정 규칙에 해당하는 비율">
+                {SOURCE_RULES.map((r) => <option key={r.id} value={`rule:${r.id}`}>{r.label} ({r.source})</option>)}
+              </optgroup>
+              <optgroup label="기타">
+                <option value="top">지점별 대표 판정(지점마다 기준 다름)</option>
+              </optgroup>
             </select>
           }
         >
-          <SiteMap
-            items={res.sites.map((s) => {
-              if (mapMode !== "top") return { site: s.site, k: s.rules[ruleId].k, n: s.rules[ruleId].n, pct: s.rules[ruleId].pct, expected: rule.siteId === s.site.id };
-              const best = SOURCE_RULES.map((r) => ({ r, st: s.rules[r.id] })).filter((x) => x.st.k > 0).sort((a, b) => (b.st.pct ?? 0) - (a.st.pct ?? 0))[0];
-              return best
-                ? { site: s.site, k: best.st.k, n: best.st.n, pct: best.st.pct, expected: false, caption: best.r.label, color: best.r.color }
-                : { site: s.site, k: 0, n: s.judged.length, pct: 0, expected: false, caption: "해당 유형 없음" };
-            })}
-            sim={sim} setSim={setSim} selected={siteId} onSelect={setSiteId} editing={editing}
-          />
+          <div className="flex flex-wrap items-center gap-1 mb-2 text-[12.5px]">
+            <span className="text-ink-3 mr-1">빠른 선택</span>
+            {["Fe", "Ca", "Na", "Cl", "S", "Mg", "K", "Ti", "Zn"].filter((el) => dataElements.includes(el)).map((el) => (
+              <button key={el} onClick={() => setMapMode(`el:${el}`)} className={`font-mono px-2 py-0.5 border rounded-[3px] ${mapMode === `el:${el}` ? "bg-block text-white border-block" : "border-line-2 hover:border-ink"}`}>{el}</button>
+            ))}
+            <span className="w-2" />
+            {["rail", "nacl", "cas", "tizn", "talc", "fiber", "cafe"].map((id) => { const r = ruleById(id); return (
+              <button key={id} onClick={() => setMapMode(`rule:${id}`)} className={`px-2 py-0.5 border rounded-[3px] ${mapMode === `rule:${id}` ? "bg-block text-white border-block" : "border-line-2 hover:border-ink"}`}>{r.label.replace(" 입자", "")}</button>
+            ); })}
+          </div>
+          <SiteMap items={mapView.items} sim={sim} setSim={setSim} selected={siteId} onSelect={setSiteId} editing={editing} />
           {mapMode === "top" && (
             <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[12.5px] text-ink-2">
               {SOURCE_RULES.map((r) => <span key={r.id} className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 inline-block" style={{ background: r.color }} />{r.label}</span>)}
@@ -154,7 +197,7 @@ export function SimulatorPage() {
                       const st = s.rules[r.id];
                       const exp = r.siteId === s.site.id;
                       return (
-                        <td key={s.site.id} className="num cursor-pointer" onClick={() => { setRuleId(r.id); setMapMode(r.id); setSiteId(s.site.id); }}
+                        <td key={s.site.id} className="num cursor-pointer" onClick={() => { setMapMode(`rule:${r.id}`); setSiteId(s.site.id); }}
                           style={{ background: st.n && st.k ? seqColor((st.pct ?? 0) / 100) + "55" : undefined, outline: exp ? "2px solid #282828" : undefined, outlineOffset: -2 }}>
                           <div className="font-semibold">{pctTxt(st)}{st.p != null && st.p < 0.05 ? "*" : ""}</div>
                           <div className="text-[11.5px] text-ink-3">{kn(st)}{st.sub && st.k ? ` · ${r.sub!.label.split(" ")[0]} ${kn(st.sub)}` : ""}</div>
