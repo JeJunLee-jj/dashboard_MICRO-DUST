@@ -30,8 +30,6 @@ export function HazardPage() {
     const js = particles.map((p) => judgeParticle(p, sim.config, settings));
     const inRange = (j: (typeof js)[number]) => j.inSize === true && j.particle.edsValid;
     const g = GANGNAM_SITES.map((s) => ({ id: s.id, label: s.short, full: s.label, ps: js.filter((j) => j.site?.id === s.id && inRange(j)).map((j) => j.particle) }));
-    const ref = js.filter((j) => !j.site && inRange(j)).map((j) => j.particle);
-    if (ref.length) g.push({ id: "ref", label: "공기청정기(참고)", full: "공기청정기 포집(참고)", ps: ref });
     return g;
   }, [particles, settings, sim]);
   const elements = useMemo(() => Object.keys(ELEMENT_HAZARD)

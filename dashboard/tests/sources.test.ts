@@ -4,7 +4,7 @@ import { parseCsvText } from "../src/lib/parse/tabular";
 import { buildParticleFromPair, type PairInput } from "../src/lib/register";
 import { EMPTY_DATASET, joinState } from "../src/lib/dataset";
 import { matchSitePath } from "../src/lib/sites";
-import { DEFAULT_SIM_CONFIG, missingIndicators, requiredN, simulate } from "../src/lib/sources";
+import { DEFAULT_SIM_CONFIG, mainElements, missingIndicators, requiredN, simulate, siteAdvice } from "../src/lib/sources";
 import { scanPhenomFolder, averageSpots } from "../src/lib/phenomImport";
 
 const csv = (rows: Array<[string, number]>) =>
@@ -108,5 +108,33 @@ describe("Phenom 원본 폴더 읽기", () => {
   it("폴더 이름 D, EDS는 개찰구로 헷갈리지 않는다", () => {
     expect(matchSitePath("261021_D/x")?.id).toBe("gate");
     expect(matchSitePath("261021_EDS_E-43/x")?.id).toBe("cafe");
+  });
+});
+
+describe("비구형 지표와 지점 판단", () => {
+  const { s, particles } = dataset([
+    particle("A1", "개찰구 (D구역)", 7, 1.6, [["O", 30], ["Fe", 60], ["Si", 10]]),
+    particle("A2", "개찰구 (D구역)", 8, 1.2, [["O", 40], ["Na", 5], ["Cl", 5], ["Si", 50]]),
+    particle("A3", "개찰구 (D구역)", 8, null, [["O", 50], ["Si", 50]]),
+    particle("B1", "카페·간편식 (E-43)", 6, 1.2, [["C", 40], ["O", 30], ["K", 5], ["P", 3], ["Ca", 22]]),   // 구형이면 불규칙 유기 입자 아님
+  ]);
+  const r = simulate(particles, DEFAULT_SIM_CONFIG, s);
+  const gate = r.sites.find((x) => x.site.id === "gate")!;
+  it("종횡비를 모르는 입자는 비구형 분모에서 뺀다", () => {
+    expect(gate.nonSphere).toMatchObject({ k: 1, n: 2 });
+    expect(r.overallNonSphere).toMatchObject({ k: 1, n: 3 });
+  });
+  it("카페 유기 입자는 불규칙(비구형) 조건도 만족해야 한다", () => {
+    expect(r.sites.find((x) => x.site.id === "cafe")!.rules.cafe.k).toBe(0);
+  });
+  it("세포 실험 시료 후보는 필터 영향이 큰 유형을 뺀다", () => {
+    const a = siteAdvice(gate);
+    expect(a.priority[0].rule.id).toBe("rail");
+    expect(a.target?.rule.id).toBe("rail");
+    const onlyFilter = simulate(dataset([particle("C1", "음식점 (B-28)", 7, 1.2, [["O", 50], ["Na", 25], ["Cl", 25]])]).particles, DEFAULT_SIM_CONFIG, s);
+    expect(siteAdvice(onlyFilter.sites.find((x) => x.site.id === "food")!).target).toBeNull();
+  });
+  it("주요 구성 원소는 평균 wt% 순서", () => {
+    expect(mainElements(r, 2).map((m) => m.el)).toEqual(["O", "Si"]);
   });
 });

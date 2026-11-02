@@ -8,9 +8,10 @@ import { useStore } from "../state/store";
 /** 페이지 번호·영문 표제(도면 표제란처럼 작게) */
 const PAGE_EYEBROW: Record<string, string> = {
   simulator: "01 — Rule-based AI Simulator",
-  hazard: "02 — Element Hazards by Site",
-  particles: "03 — SEM Particles",
-  data: "04 — Data",
+  literature: "02 — Literature Database",
+  hazard: "03 — Element Hazards by Site",
+  particles: "04 — SEM Particles",
+  data: "05 — Data",
 };
 
 export function Card({ title, subtitle, actions, children, className = "", id }: { title?: ReactNode; subtitle?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string; id?: string }) {

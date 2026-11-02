@@ -44,14 +44,14 @@ function writeLS(key: string, v: unknown) {
 }
 
 export interface Route {
-  page: "simulator" | "hazard" | "particles" | "data";
+  page: "simulator" | "literature" | "hazard" | "particles" | "data";
   particleKey?: string;
 }
 
 function parseHash(): Route {
   const h = decodeURIComponent(window.location.hash.replace(/^#\/?/, ""));
   const [page, ...rest] = h.split("/");
-  const pages: Route["page"][] = ["simulator", "hazard", "particles", "data"];
+  const pages: Route["page"][] = ["simulator", "literature", "hazard", "particles", "data"];
   const p = (pages as string[]).includes(page) ? (page as Route["page"]) : "simulator";
   return { page: p, particleKey: p === "particles" && rest.length ? rest.join("/") : undefined };
 }

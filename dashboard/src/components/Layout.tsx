@@ -4,9 +4,10 @@ import { DemoTag } from "./ui";
 
 const NAV: Array<{ page: Route["page"]; label: string; n: number }> = [
   { page: "simulator", label: "AI 시뮬레이터", n: 1 },
-  { page: "hazard", label: "지점별 원소 위해성", n: 2 },
-  { page: "particles", label: "입자 목록", n: 3 },
-  { page: "data", label: "데이터 관리", n: 4 },
+  { page: "literature", label: "문헌 데이터베이스", n: 2 },
+  { page: "hazard", label: "지점별 원소 위해성", n: 3 },
+  { page: "particles", label: "입자 목록", n: 4 },
+  { page: "data", label: "데이터 관리", n: 5 },
 ];
 
 /** 웹 배포판(GitHub Pages)에 함께 올라간 오프라인판이 있으면 내려받기 링크를 보여준다 */
@@ -36,8 +37,8 @@ export function Layout({ children }: { children: ReactNode }) {
             <circle cx="15" cy="15" r="2.2" fill="#f15534" stroke="none" />
           </svg>
           <span className="leading-tight">
-            <span className="block font-mono text-[12px] font-semibold tracking-[0.08em] text-ink">SEM-EDS / PM</span>
-            <span className="block text-[15px] font-bold text-ink mt-0.5">미세먼지 입자 분석</span>
+            <span className="block font-mono text-[12px] font-semibold tracking-[0.08em] text-ink">SEM-EDS / AI SIMULATOR</span>
+            <span className="block text-[15px] font-bold text-ink mt-0.5">지하상가 단일입자 분석</span>
           </span>
         </a>
         <nav className="flex-1 overflow-auto py-3 px-2.5 space-y-0.5" aria-label="페이지">

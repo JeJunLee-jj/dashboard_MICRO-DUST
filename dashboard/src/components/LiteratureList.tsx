@@ -29,7 +29,7 @@ export function SiteLiteratureBlock({ siteId, compact }: { siteId: string; compa
   if (!lit) return <LitItems items={BACKGROUND_LITERATURE} compact={compact} />;
   return (
     <div>
-      <div className="text-[12.5px] text-ink-2 mb-1.5">연구진이 꼽은 지표 원소: <span className="font-mono font-semibold text-ink">{lit.indicators.join(", ")}</span></div>
+      <div className="text-[12.5px] text-ink-2 mb-1.5">지표 원소: <span className="font-mono font-semibold text-ink">{lit.indicators.join(", ")}</span></div>
       <LitItems items={lit.items} compact={compact} />
     </div>
   );

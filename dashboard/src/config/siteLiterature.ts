@@ -1,5 +1,5 @@
-/* 지점별 선행연구 — 발생원·지표 원소와 건강 영향(연구진이 정리한 문헌 목록, 2026-10-26).
-   한 줄 요약은 연구진 정리 문구를 그대로 쓴다. 위해성은 '그 발생원·화학종에서 보고된 사례'이며
+/* 지점별 선행연구 — 발생원·지표 원소와 건강 영향(연구진이 정리한 문헌 목록, 2026-10-26 + 초록 인용 문헌).
+   한 줄 요약은 연구진 정리 문구와 초록 문구를 그대로 쓴다. 위해성은 '그 발생원·화학종에서 보고된 사례'이며
    우리 입자의 위해 정도를 뜻하지 않는다. */
 
 export interface LitItem {
@@ -12,14 +12,14 @@ export interface LitItem {
 
 export interface SiteLiterature {
   siteId: string;
-  /** 연구진이 꼽은 지표 원소 */
+  /** 지표 원소(초록과 연구진 문헌 목록 기준) */
   indicators: string[];
   items: LitItem[];
 }
 
 export const SITE_LITERATURE: SiteLiterature[] = [
   {
-    siteId: "gate", indicators: ["Fe", "Ba", "Sb"],
+    siteId: "gate", indicators: ["Fe", "Mn", "Cu", "Ba", "Sb"],
     items: [
       { topic: "안티몬 발암성 — 브레이크 패드", cite: "von Uexküll et al. (2005). Journal of Cleaner Production, 13, 19–31.", url: "https://www.globalcommunity.org/business/Antimony%20in%20Brake%20Pads%20-%20Jnl%20of%20Cleaner%20Production%20-%202005.pdf", kind: "건강 영향" },
       { topic: "지하철 종사자 단기 호흡기 영향 없음", cite: "Scand J Work Environ Health (2011), 37(2), 129–135.", url: "https://www.sjweh.fi/article/3074", kind: "건강 영향" },
@@ -34,7 +34,7 @@ export const SITE_LITERATURE: SiteLiterature[] = [
     ],
   },
   {
-    siteId: "cafe", indicators: ["K", "P"],
+    siteId: "cafe", indicators: ["K", "Ca", "P"],
     items: [
       { topic: "커피 로스팅·포장 종사자 호흡기 이상", cite: "Bailey et al. (2020). Frontiers in Public Health, 8, 5.", url: "https://stacks.cdc.gov/view/cdc/223273", kind: "건강 영향" },
       { topic: "제빵사 천식·비염 용량반응", cite: "Brisman et al. (2000). Occup Environ Med, 57(5), 335–340.", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC1739948", kind: "건강 영향" },
@@ -57,6 +57,34 @@ export const SITE_LITERATURE: SiteLiterature[] = [
 
 export const BACKGROUND_LITERATURE: LitItem[] = [
   { topic: "서울 수도권 지하상가 PM2.5와 미량원소(대상지 배경)", cite: "Won et al. (2021). IJERPH, 18(1), 297.", url: "https://www.mdpi.com/1660-4601/18/1/297", kind: "배경" },
+];
+
+/* 문헌 데이터베이스 표: 지점별 문헌 + 배경 + 초록에 인용된 문헌 + 건강 영향 분류 자료.
+   url이 없는 문헌은 초록 인용 표기만 있고 링크를 확인하지 않은 것이다. */
+export interface DbEntry extends LitItem {
+  source: string;
+}
+
+const ABSTRACT_REFS: DbEntry[] = [
+  { source: "대상지 배경", topic: "다중이용시설 미세먼지 노출 시 폐 상피세포 NF-κB 발현 증가", cite: "Lee et al. (2026)", url: "", kind: "건강 영향" },
+  { source: "대상지 배경", topic: "입자의 건강 영향은 크기·화학 성분·형상에 따라 달라질 수 있음", cite: "Hedberg et al. (2010)", url: "", kind: "건강 영향" },
+  { source: "철도 마모", topic: "철도 마모 입자의 DNA 손상", cite: "Karlsson et al. (2005). Chem. Res. Toxicol. 18(1), 19–23.", url: "https://doi.org/10.1021/tx049723c", kind: "건강 영향" },
+  { source: "의류(섬유)", topic: "섬유 입자 — 종횡비 3 이상의 형상", cite: "Vianello et al. (2019)", url: "", kind: "형상" },
+  { source: "의류(섬유)", topic: "섬유 입자 — Ti 등 첨가 원소", cite: "Filella et al. (2022)", url: "", kind: "발생원·조성" },
+  { source: "화장품", topic: "Mg-Si 판상의 탈크", cite: "Rasmussen et al. (2019). IJERPH 16(20), 3830.", url: "https://doi.org/10.3390/ijerph16203830", kind: "발생원·조성" },
+  { source: "화장품", topic: "TiO₂·ZnO 포함", cite: "Shi et al. (2013)", url: "", kind: "발생원·조성" },
+  { source: "조리(음식점)", topic: "C-rich 구형 입자와 Ca-S 입자", cite: "Li et al. (2019)", url: "", kind: "발생원·조성" },
+  { source: "조리(음식점)", topic: "C-rich 구형 입자와 Ca-S 입자", cite: "Dou et al. (2018)", url: "", kind: "발생원·조성" },
+  { source: "카페·간편식", topic: "K, Ca, P를 포함한 불규칙 유기 입자", cite: "Zarrinbakhsh et al. (2016)", url: "", kind: "발생원·조성" },
+  { source: "카페·간편식", topic: "기도 질환과의 연관", cite: "Bailey et al. (2015)", url: "", kind: "건강 영향" },
+];
+
+const SITE_SOURCE: Record<string, string> = { gate: "철도 마모", cosmetic: "화장품", cafe: "카페·간편식", food: "조리(음식점)", clothing: "의류(섬유)" };
+
+export const LITERATURE_DB: DbEntry[] = [
+  ...BACKGROUND_LITERATURE.map((x) => ({ ...x, source: "대상지 배경" })),
+  ...ABSTRACT_REFS,
+  ...SITE_LITERATURE.flatMap((s) => s.items.map((x) => ({ ...x, source: SITE_SOURCE[s.siteId] }))),
 ];
 
 export function siteLiterature(siteId: string): SiteLiterature | null {

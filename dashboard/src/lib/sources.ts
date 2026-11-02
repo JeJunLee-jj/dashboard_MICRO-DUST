@@ -43,10 +43,13 @@ export interface SourceRule {
   basis: string;     // 판정 근거(문헌)
   health: HealthLink;
   caution?: string;
+  /** 지표 원소가 유리섬유 필터에서도 나올 수 있어 과대 판정 가능 — 세포 실험 시료 후보에서 뺀다 */
+  filterSensitive?: boolean;
   color: string;
 }
 
 export const THRESHOLD_LABELS: Record<string, { label: string; unit: string; step: number }> = {
+  nonSphereAr: { label: "비구형: 종횡비 하한", unit: "", step: 0.1 },
   feMin: { label: "철도 마모: Fe 하한", unit: "wt%", step: 1 },
   fiberAr: { label: "섬유: 종횡비 하한", unit: "", step: 0.1 },
   fiberCO: { label: "섬유: C+O 합 하한", unit: "wt%", step: 5 },
@@ -58,7 +61,7 @@ export const THRESHOLD_LABELS: Record<string, { label: string; unit: string; ste
 };
 
 export const DEFAULT_THRESHOLDS: Record<string, number> = {
-  feMin: 10, fiberAr: 3, fiberCO: 60, talcMg: 3, talcSi: 10, cRich: 50, sphereAr: 1.2, cafeC: 20,
+  nonSphereAr: 1.5, feMin: 10, fiberAr: 3, fiberCO: 60, talcMg: 3, talcSi: 10, cRich: 50, sphereAr: 1.2, cafeC: 20,
 };
 
 /* 문헌 데이터베이스(초록에 인용된 선행연구 기준). 건강 영향 문구는 초록·문헌에 보고된 범위만 쓴다. */
@@ -88,7 +91,7 @@ export const SOURCE_RULES: SourceRule[] = [
     indicators: ["Mg", "Si"],
     basis: "화장품·향수 상점 주변 입자는 Mg-Si 판상의 탈크를 포함(Rasmussen et al., 2019)",
     health: { effect: "탈크: IARC 2A군(인체 발암 추정, 2024), 화장용 탈크 흡입에 따른 폐 육아종증 증례", refs: "IARC Monographs Vol. 136; Jasuja et al., 2017", evidence: "분류 기관·증례" },
-    caution: "Si는 유리섬유 필터에서도 나오므로 Mg 기준이 중요하다.",
+    caution: "판상 여부는 2D 사진만으로 구분할 수 없어 조성 조건으로 판정한다. Si는 유리섬유 필터에서도 나오므로 Mg 기준이 중요하다.",
     color: "#e87ba4",
   },
   {
@@ -98,6 +101,7 @@ export const SOURCE_RULES: SourceRule[] = [
     basis: "화장품 입자는 TiO₂·ZnO를 포함(Shi et al., 2013)",
     health: { effect: "호흡성 TiO₂ 입자: IARC 2B군, 캘리포니아 Prop 65 경고 대상 / ZnO 흄: 금속흄열", refs: "IARC Monographs Vol. 93; OEHHA Prop 65; ATSDR Zinc", evidence: "분류 기관" },
     caution: "필터(유리섬유)에서도 Zn·Ti가 검출될 수 있어 과대 판정 가능성이 있다.",
+    filterSensitive: true,
     color: "#4a3aa7",
   },
   {
@@ -123,14 +127,15 @@ export const SOURCE_RULES: SourceRule[] = [
     basis: "음식점 시료의 Na-Cl 입자(조리·식품 유래 염)",
     health: { effect: "보고된 건강 영향 근거 제한적", refs: "—", evidence: "—" },
     caution: "Na는 유리섬유 필터에서도 나온다.",
+    filterSensitive: true,
     color: "#1baf7a",
   },
   {
-    id: "cafe", source: "카페·간편식", label: "K·P 동반 유기 입자", siteId: "cafe",
-    conds: [{ kind: "detectedAll", els: ["K", "P"] }, { kind: "minWt", el: "C", key: "cafeC" }],
+    id: "cafe", source: "카페·간편식", label: "K·P 동반 불규칙 유기 입자", siteId: "cafe",
+    conds: [{ kind: "detectedAll", els: ["K", "P"] }, { kind: "minWt", el: "C", key: "cafeC" }, { kind: "arMin", key: "nonSphereAr" }],
     indicators: ["K", "P", "Ca"],
     basis: "카페 분진은 K, Ca, P를 포함한 불규칙 유기 입자(Zarrinbakhsh et al., 2016), 베이커리 실내 PM에서 K가 제빵 지표(Ielpo et al., 2020)",
-    health: { effect: "커피 로스팅·포장 종사자의 호흡기 이상, 제빵사 천식·비염의 용량반응 관계", refs: "Bailey et al., 2020; Brisman et al., 2000", evidence: "역학(직업)" },
+    health: { effect: "기도 질환과의 연관, 커피 로스팅·포장 종사자의 호흡기 이상, 제빵사 천식·비염의 용량반응 관계", refs: "Bailey et al., 2015; Bailey et al., 2020; Brisman et al., 2000", evidence: "역학(직업)" },
     color: "#66645e",
   },
 ];
@@ -192,6 +197,8 @@ export interface ParticleJudgement {
   site: SiteDef | null;
   size: number | null;
   inSize: Tri;
+  /** 비구형(종횡비 ≥ 기준값) 여부 */
+  nonSphere: Tri;
   results: Record<string, { match: Tri; sub: Tri }>;
   /** 해당한 규칙 id */
   matched: string[];
@@ -207,7 +214,9 @@ export function judgeParticle(p: Particle, cfg: SimConfig, s: AnalysisSettings, 
   const inSize: Tri = !cfg.applySize ? true : size == null ? null : size >= cfg.sizeMin && size <= cfg.sizeMax;
   const results: ParticleJudgement["results"] = {};
   for (const r of rules) results[r.id] = evalRule(p, r, cfg.thresholds, s);
-  return { particle: p, site: siteOf(p), size, inSize, results, matched: rules.filter((r) => results[r.id].match === true).map((r) => r.id) };
+  const ar = p.meta?.aspect_ratio;
+  const nonSphere: Tri = ar == null || !Number.isFinite(ar) ? null : ar >= cfg.thresholds.nonSphereAr;
+  return { particle: p, site: siteOf(p), size, inSize, nonSphere, results, matched: rules.filter((r) => results[r.id].match === true).map((r) => r.id) };
 }
 
 /* ---------- 지점별 집계 ---------- */
@@ -232,6 +241,8 @@ export interface SiteResult {
   /** 분석 대상(크기 범위 안) */
   judged: ParticleJudgement[];
   rules: Record<string, RuleStat>;
+  /** 비구형 입자 비율 */
+  nonSphere: RuleStat;
 }
 
 function rate(k: number, n: number): Rate {
@@ -242,6 +253,7 @@ export interface Simulation {
   judgements: ParticleJudgement[];
   sites: SiteResult[];
   overall: Record<string, Rate>;
+  overallNonSphere: Rate;
   /** 지점에 배정되지 않은 입자 수 */
   unassigned: number;
 }
@@ -267,14 +279,19 @@ export function simulate(particles: Particle[], cfg: SimConfig, s: AnalysisSetti
         p: a.n && b.n ? fisherExact(a.k, a.n - a.k, b.k, b.n - b.k) : null,
       };
     }
-    return { site, total: judgements.filter((j) => j.site?.id === site.id).length, judged, rules: stats };
+    const sa = judged.filter((j) => j.nonSphere !== null), sb = rest.filter((j) => j.nonSphere !== null);
+    const ka = sa.filter((j) => j.nonSphere).length, kb = sb.filter((j) => j.nonSphere).length;
+    const nonSphere: RuleStat = { ...rate(ka, sa.length), sub: null, p: sa.length && sb.length ? fisherExact(ka, sa.length - ka, kb, sb.length - kb) : null };
+    return { site, total: judgements.filter((j) => j.site?.id === site.id).length, judged, rules: stats, nonSphere };
   });
   const overall: Record<string, Rate> = {};
   for (const r of rules) {
     const c = count(pool, r.id);
     overall[r.id] = rate(c.k, c.n);
   }
-  return { judgements, sites, overall, unassigned: judgements.filter((j) => !j.site).length };
+  const ns = pool.filter((j) => j.nonSphere !== null);
+  const overallNonSphere = rate(ns.filter((j) => j.nonSphere).length, ns.length);
+  return { judgements, sites, overall, overallNonSphere, unassigned: judgements.filter((j) => !j.site).length };
 }
 
 /* ---------- 관리·추가 분석 판단 ---------- */
@@ -292,14 +309,18 @@ export interface SiteAdvice {
   expected: Array<{ rule: SourceRule; stat: RuleStat }>;
   /** 신뢰구간 ±15%p 이내로 추정하려면 필요한 입자 수 */
   needN: number;
+  /** 후속 세포 실험 시료 후보: 필터 영향이 큰 유형을 빼고 건강 영향이 보고된 유형 중 해당 비율이 가장 높은 것 */
+  target: { rule: SourceRule; stat: RuleStat } | null;
 }
 
 export function siteAdvice(res: SiteResult, rules = SOURCE_RULES): SiteAdvice {
   const list = rules.map((rule) => ({ rule, stat: res.rules[rule.id] }));
-  const priority = list.filter((x) => x.stat.k > 0).sort((a, b) => (b.stat.pct ?? 0) - (a.stat.pct ?? 0));
+  // 필터 신호가 섞일 수 있는 유형(Ti·Zn, Na-Cl)은 뒤로 보낸다
+  const priority = list.filter((x) => x.stat.k > 0).sort((a, b) => Number(!!a.rule.filterSensitive) - Number(!!b.rule.filterSensitive) || (b.stat.pct ?? 0) - (a.stat.pct ?? 0));
   const expected = list.filter((x) => x.rule.siteId === res.site.id);
   const top = priority[0]?.stat.pct ?? expected[0]?.stat.pct ?? 50;
-  return { priority, expected, needN: requiredN(top) };
+  const target = priority.find((x) => !x.rule.filterSensitive && x.rule.health.refs !== "—") ?? null;
+  return { priority, expected, needN: requiredN(top), target };
 }
 
 /** 지표 원소 중 데이터 전체에서 한 번도 검출되지 않은 원소 — 측정 원소 목록에 넣었는지 확인 필요 */
@@ -309,6 +330,14 @@ export function missingIndicators(particles: Particle[], rules = SOURCE_RULES): 
   const map = new Map<string, SourceRule[]>();
   for (const r of rules) for (const el of r.indicators) if (!seen.has(el)) map.set(el, [...(map.get(el) ?? []), r]);
   return [...map.entries()].map(([el, rs]) => ({ el, rules: rs }));
+}
+
+/** 분석 대상 입자의 평균 조성이 높은 순서(주요 구성 원소) */
+export function mainElements(res: Simulation, top = 4): Array<{ el: string; wt: number }> {
+  const ps = res.sites.flatMap((s) => s.judged.filter((j) => j.particle.edsValid).map((j) => j.particle));
+  const sum = new Map<string, number>();
+  for (const p of ps) for (const [el, e] of Object.entries(p.elements)) if (e.status === "detected" && e.wt) sum.set(el, (sum.get(el) ?? 0) + e.wt);
+  return [...sum.entries()].map(([el, v]) => ({ el, wt: v / (ps.length || 1) })).sort((a, b) => b.wt - a.wt).slice(0, top);
 }
 
 /** 조건을 사람이 읽는 문장으로 */
