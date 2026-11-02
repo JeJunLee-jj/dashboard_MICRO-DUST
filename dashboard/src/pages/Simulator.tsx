@@ -33,7 +33,8 @@ export function SimulatorPage() {
   const res = useMemo(() => simulate(particles, cfg, settings), [particles, cfg, settings]);
   const base = useMemo(() => simulate(particles, DEFAULT_SIM_CONFIG, settings), [particles, settings]);
   const changed = JSON.stringify(cfg) !== JSON.stringify(DEFAULT_SIM_CONFIG);
-  const missing = useMemo(() => missingIndicators(particles), [particles]);
+  // 5개 지점 입자만 본다(공기청정기 참고 입자의 원소가 섞이지 않게)
+  const missing = useMemo(() => missingIndicators(res.judgements.filter((j) => j.site).map((j) => j.particle)), [res]);
   const site = res.sites.find((s) => s.site.id === siteId)!;
   const advice = siteAdvice(site);
   const nJudged = res.sites.reduce((a, s) => a + s.judged.length, 0);
