@@ -123,3 +123,50 @@ export function hullDistance(hull: Array<{ x: number; y: number }>, x: number, y
   }
   return best;
 }
+
+/** 격자를 3×3 평균으로 한 번 다듬는다(등고선이 계단처럼 꺾이지 않게) */
+export function smoothGrid(g: Grid): Grid {
+  const out = new Float64Array(g.values.length);
+  for (let y = 0; y < g.ny; y++) for (let x = 0; x < g.nx; x++) {
+    let s = 0, n = 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const xx = x + dx, yy = y + dy;
+      if (xx < 0 || yy < 0 || xx >= g.nx || yy >= g.ny) continue;
+      const v = g.values[yy * g.nx + xx];
+      if (Number.isFinite(v)) { s += v; n++; }
+    }
+    out[y * g.nx + x] = n ? s / n : NaN;
+  }
+  return { nx: g.nx, ny: g.ny, values: out };
+}
+
+/** 등고선 선분을 이어 붙여 선(점 목록)으로 만든다 */
+export function chainSegments(segs: Array<[number, number, number, number]>): Array<Array<[number, number]>> {
+  const key = (x: number, y: number) => `${x.toFixed(6)},${y.toFixed(6)}`;
+  const ends = new Map<string, number[]>();
+  segs.forEach(([x1, y1, x2, y2], i) => {
+    for (const k of [key(x1, y1), key(x2, y2)]) { const a = ends.get(k); if (a) a.push(i); else ends.set(k, [i]); }
+  });
+  const used = new Uint8Array(segs.length);
+  const lines: Array<Array<[number, number]>> = [];
+  const extend = (line: Array<[number, number]>, atEnd: boolean) => {
+    for (;;) {
+      const [px, py] = atEnd ? line[line.length - 1] : line[0];
+      const next = (ends.get(key(px, py)) ?? []).find((j) => !used[j]);
+      if (next == null) return;
+      used[next] = 1;
+      const [x1, y1, x2, y2] = segs[next];
+      const p: [number, number] = key(x1, y1) === key(px, py) ? [x2, y2] : [x1, y1];
+      if (atEnd) line.push(p); else line.unshift(p);
+    }
+  };
+  segs.forEach(([x1, y1, x2, y2], i) => {
+    if (used[i]) return;
+    used[i] = 1;
+    const line: Array<[number, number]> = [[x1, y1], [x2, y2]];
+    extend(line, true);
+    extend(line, false);
+    lines.push(line);
+  });
+  return lines;
+}

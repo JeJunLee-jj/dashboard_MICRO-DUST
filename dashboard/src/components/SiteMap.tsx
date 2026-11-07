@@ -1,10 +1,10 @@
 /* 지하상가 평면 지도 — 선택한 판정 규칙에 해당하는 입자 비율을 지점별 원(마커)으로 표시.
    기본 배경은 '강남역 지하도상가 배치도'이며, 다른 평면도를 올리면 마커를 끌어 위치를 맞출 수 있다. */
-import { useMemo, useRef, useState, type PointerEvent as RPointerEvent } from "react";
+import { useId, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from "react";
 import type { SimSettings } from "../lib/sources";
 import type { SiteDef } from "../lib/sites";
 import { seqColor, seqColorSmooth } from "../lib/palette";
-import { convexHull, hullDistance, hullMean, isolines, sampleGrid, sibsonGrid } from "../lib/interp";
+import { chainSegments, convexHull, hullDistance, hullMean, isolines, sampleGrid, sibsonGrid, smoothGrid } from "../lib/interp";
 import floorPlanUrl from "../assets/gangnam-floorplan.webp";
 
 export const DEFAULT_PLAN = { url: floorPlanUrl, name: "강남역 지하도상가 배치도", w: 2000, h: 1414 };
@@ -24,8 +24,25 @@ export interface MapItem {
 
 export type MapDisplay = "circle" | "contour";
 
-/** 등고선 띠 간격(%) — 값 범위가 좁으면 5%, 넓으면 10% */
-const contourStep = (vs: number[]) => (Math.max(...vs) - Math.min(...vs) >= 20 ? 10 : 5);
+/** 등고선 간격(%) — 가는 선(주곡선)이 15~20개쯤 되게 고르고, 숫자를 붙이는 굵은 선(계곡선)은 5개마다 */
+const contourSteps = (vs: number[]) => {
+  const range = Math.max(...vs) - Math.min(...vs);
+  const minor = [1, 2, 5, 10].find((m) => range / m <= 20) ?? 10;
+  return { minor, major: minor * 5 };
+};
+
+/** 점 목록을 매끈한 곡선 경로로(Catmull-Rom → 베지어) */
+function smoothPath(pts: Array<[number, number]>): string {
+  if (pts.length < 2) return "";
+  let d = `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] ?? pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] ?? p2;
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+    d += `C${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
 
 export function SiteMap({ items, sim, setSim, selected, onSelect, editing, display = "circle" }: {
   items: MapItem[];
@@ -44,47 +61,64 @@ export function SiteMap({ items, sim, setSim, selected, onSelect, editing, displ
   const maxN = Math.max(1, ...items.map((i) => i.n));
   const posOf = (s: SiteDef) => sim.positions[s.id] ?? { x: s.x, y: s.y };
 
-  // 등고선: 측정값이 있는 지점이 2곳 이상일 때만(지점별 대표 판정처럼 범주형 색은 원으로)
+  // 등고선(지형도처럼): 측정값이 있는 지점이 2곳 이상일 때만(지점별 대표 판정처럼 범주형 색은 원으로)
+  const maskId = useId();
   const contour = useMemo(() => {
     if (display !== "contour") return null;
     const pts = items.filter((i) => i.n > 0 && i.pct != null && !i.color).map((i) => ({ ...(sim.positions[i.site.id] ?? { x: i.site.x, y: i.site.y }), v: i.pct! }));
     if (pts.length < 2) return null;
-    const nx = 90, ny = Math.max(2, Math.round((nx * H) / W));
-    const g = sibsonGrid(pts, nx, ny);
+    const nx = 120, ny = Math.max(2, Math.round((nx * H) / W));
+    const g = smoothGrid(smoothGrid(sibsonGrid(pts, nx, ny)));
     const hull = convexHull(pts);
-    const step = contourStep(pts.map((p) => p.v));
-    const lo = Math.floor(Math.min(...pts.map((p) => p.v)) / step) * step;
-    const hi = Math.max(lo + step, Math.ceil(Math.max(...pts.map((p) => p.v)) / step) * step);
-    const bands: Array<{ from: number; to: number; color: string }> = [];
-    // 띠 색은 이 지도의 값 범위 안에서 옅은 색 → 짙은 색으로 고르게 나눈다(띠끼리 잘 구분되게)
-    const nb = Math.round((hi - lo) / step);
-    for (let i = 0; i < nb; i++) bands.push({ from: lo + i * step, to: lo + (i + 1) * step, color: seqColorSmooth(nb === 1 ? 0.5 : 0.08 + (0.84 * i) / (nb - 1)) });
-    const bandOf = (v: number) => bands[Math.max(0, Math.min(bands.length - 1, Math.floor((v - lo) / step)))];
-    // 측정 범위(점선) 안은 진하게, 바깥은 범위에서 멀어질수록 옅게 — MARGIN(가로 폭 비율)을 넘으면 그리지 않는다
-    const MARGIN = 0.07, ay = H / W;
-    const alphaAt = (u: number, v: number) => { const d = hullDistance(hull, u, v, ay); return d === 0 ? 1 : d < MARGIN ? 0.55 * (1 - d / MARGIN) : 0; };
-    // 띠 색 그림(격자를 쌍선형으로 늘려 경계를 매끈하게)
-    let url: string | null = null;
-    const cw = 500, ch = Math.round((cw * H) / W);
-    const cv = typeof document !== "undefined" ? document.createElement("canvas") : null;
-    const ctx = cv?.getContext("2d");
-    if (cv && ctx) {
-      cv.width = cw; cv.height = ch;
-      const img = ctx.createImageData(cw, ch);
+    const vs = pts.map((p) => p.v);
+    const vmin = Math.min(...vs), vmax = Math.max(...vs);
+    const { minor, major } = contourSteps(vs);
+    // 측정 범위(점선) 안은 그대로, 바깥은 범위에서 멀어질수록 옅게 — MARGIN(가로 폭 비율)을 넘으면 그리지 않는다
+    const MARGIN = 0.12, ay = H / W;
+    const alphaAt = (u: number, v: number) => { const d = hullDistance(hull, u, v, ay); return d === 0 ? 1 : d < MARGIN ? 1 - d / MARGIN : 0; };
+    // 옅은 높이 색(높을수록 짙은 주황)과 가림막(mask) 그림
+    let tint: string | null = null, mask: string | null = null;
+    const cw = 400, ch = Math.round((cw * H) / W);
+    const mk = () => { const c = typeof document !== "undefined" ? document.createElement("canvas") : null; const x = c?.getContext("2d"); if (c && x) { c.width = cw; c.height = ch; } return [c, x] as const; };
+    const [tc, tx] = mk(), [mc, mx] = mk();
+    if (tc && tx && mc && mx) {
+      const ti = tx.createImageData(cw, ch), mi = mx.createImageData(cw, ch);
       for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) {
-        const u = (x + 0.5) / cw, v = (y + 0.5) / ch;
+        const u = (x + 0.5) / cw, v = (y + 0.5) / ch, o = (y * cw + x) * 4;
         const a = alphaAt(u, v);
-        const val = a > 0 ? sampleGrid(g, u, v) : NaN;
+        mi.data[o] = mi.data[o + 1] = mi.data[o + 2] = Math.round(255 * a); mi.data[o + 3] = 255;
+        if (a <= 0) continue;
+        const val = sampleGrid(g, u, v);
         if (!Number.isFinite(val)) continue;
-        const c = bandOf(val).color;
-        const o = (y * cw + x) * 4;
-        img.data[o] = parseInt(c.slice(1, 3), 16); img.data[o + 1] = parseInt(c.slice(3, 5), 16); img.data[o + 2] = parseInt(c.slice(5, 7), 16);
-        img.data[o + 3] = Math.round(235 * a);
+        const c = seqColorSmooth(vmax > vmin ? (val - vmin) / (vmax - vmin) : 0.5);
+        ti.data[o] = parseInt(c.slice(1, 3), 16); ti.data[o + 1] = parseInt(c.slice(3, 5), 16); ti.data[o + 2] = parseInt(c.slice(5, 7), 16); ti.data[o + 3] = 255;
       }
-      ctx.putImageData(img, 0, 0);
-      url = cv.toDataURL("image/png");
+      tx.putImageData(ti, 0, 0); mx.putImageData(mi, 0, 0);
+      tint = tc.toDataURL("image/png"); mask = mc.toDataURL("image/png");
     }
-    return { url, hull, bands, levels: bands.slice(1).map((b) => ({ l: b.from, segs: isolines(g, b.from).filter(([x1, y1, x2, y2]) => alphaAt((x1 + x2) / 2, (y1 + y2) / 2) > 0.25) })), mean: hullMean(g, hull) };
+    // 등고선: 선분을 이어 매끈한 곡선으로, 굵은 선에는 값 숫자를 선 방향으로 붙인다
+    const sites = pts.map((p) => [p.x * W, p.y * H]);
+    const lines: Array<{ l: number; major: boolean; d: string }> = [];
+    const labels: Array<{ l: number; x: number; y: number; angle: number }> = [];
+    for (let l = Math.ceil(vmin / minor) * minor; l <= vmax; l += minor) {
+      if (l <= vmin || l >= vmax) continue;
+      const isMajor = l % major === 0;
+      for (const line of chainSegments(isolines(g, l))) {
+        const px = line.map(([x, y]) => [x * W, y * H] as [number, number]);
+        const visible = px.filter(([x, y]) => alphaAt(x / W, y / H) > 0.05);
+        if (visible.length < 2) continue;
+        lines.push({ l, major: isMajor, d: smoothPath(px) });
+        if (!isMajor || px.length < 8) continue;
+        // 선 가운데쯤에서, 지점 표시와 겹치지 않고 측정 범위 안인 곳에 숫자
+        const order = px.map((_, i) => i).sort((a, b) => Math.abs(a - px.length / 2) - Math.abs(b - px.length / 2));
+        const at = order.find((i) => i > 1 && i < px.length - 2 && alphaAt(px[i][0] / W, px[i][1] / H) > 0.6 && sites.every(([sx, sy]) => Math.hypot(sx - px[i][0], sy - px[i][1]) > 70));
+        if (at == null) continue;
+        let angle = (Math.atan2(px[at + 2][1] - px[at - 2][1], px[at + 2][0] - px[at - 2][0]) * 180) / Math.PI;
+        if (angle > 90) angle -= 180; else if (angle < -90) angle += 180;
+        labels.push({ l, x: px[at][0], y: px[at][1], angle });
+      }
+    }
+    return { tint, mask, hull, lines, labels, minor, major, mean: hullMean(g, hull) };
   }, [display, items, sim.positions, W, H]);
 
   const toLocal = (e: RPointerEvent) => {
@@ -116,12 +150,24 @@ export function SiteMap({ items, sim, setSim, selected, onSelect, editing, displ
       <rect x={0} y={0} width={W} height={H} fill="#ffffff" opacity={0.5} />
       {contour && (
         <g pointerEvents="none">
-          {contour.url && <image href={contour.url} x={0} y={0} width={W} height={H} preserveAspectRatio="none" style={{ mixBlendMode: "multiply" }} />}
-          {contour.levels.map(({ l, segs }) => (
-            <path key={l} d={segs.map(([x1, y1, x2, y2]) => `M${(x1 * W).toFixed(1)} ${(y1 * H).toFixed(1)}L${(x2 * W).toFixed(1)} ${(y2 * H).toFixed(1)}`).join("")}
-              fill="none" stroke="#73290f" strokeWidth={1.2} opacity={0.55} />
-          ))}
-          <polygon points={contour.hull.map((p) => `${p.x * W},${p.y * H}`).join(" ")} fill="none" stroke="#282828" strokeWidth={1.4} strokeDasharray="6 4" opacity={0.7} />
+          {contour.mask && (
+            <defs>
+              <mask id={maskId} maskUnits="userSpaceOnUse" x={0} y={0} width={W} height={H}>
+                <image href={contour.mask} x={0} y={0} width={W} height={H} preserveAspectRatio="none" />
+              </mask>
+            </defs>
+          )}
+          <g mask={contour.mask ? `url(#${maskId})` : undefined}>
+            {contour.tint && <image href={contour.tint} x={0} y={0} width={W} height={H} preserveAspectRatio="none" opacity={0.38} />}
+            {contour.lines.map((ln, i) => (
+              <path key={i} d={ln.d} fill="none" stroke="#7a3b12" strokeWidth={ln.major ? 2.2 : 1} opacity={ln.major ? 0.95 : 0.7} strokeLinejoin="round" strokeLinecap="round" />
+            ))}
+            {contour.labels.map((lb, i) => (
+              <text key={i} x={lb.x} y={lb.y} transform={`rotate(${lb.angle.toFixed(1)} ${lb.x.toFixed(1)} ${lb.y.toFixed(1)})`} dy={4.5}
+                textAnchor="middle" fontSize={13} fontWeight={700} fill="#7a3b12" stroke="#fff" strokeWidth={4} paintOrder="stroke" className="tnum">{lb.l}%</text>
+            ))}
+          </g>
+          <polygon points={contour.hull.map((p) => `${p.x * W},${p.y * H}`).join(" ")} fill="none" stroke="#282828" strokeWidth={1} strokeDasharray="5 5" opacity={0.45} />
         </g>
       )}
       {items.map(({ site: s, k, n, pct, expected, caption, color }) => {
@@ -176,16 +222,13 @@ export function SiteMap({ items, sim, setSim, selected, onSelect, editing, displ
     </svg>
     {contour && (
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[12.5px] text-ink-2">
-        <span className="inline-flex items-end">
-          {contour.bands.map((b) => (
-            <span key={b.from} className="inline-flex flex-col items-center">
-              <span className="w-12 h-3" style={{ background: b.color }} />
-              <span className="tnum text-[11.5px]">{b.from}~{b.to}%</span>
-            </span>
-          ))}
+        <span className="inline-flex items-center gap-1.5">
+          <svg width="34" height="10" aria-hidden><line x1="1" y1="5" x2="33" y2="5" stroke="#7a3b12" strokeWidth="1" opacity="0.7" /></svg>{contour.minor}% 간격
+          <svg width="34" height="10" aria-hidden className="ml-1.5"><line x1="1" y1="5" x2="33" y2="5" stroke="#7a3b12" strokeWidth="2.2" /></svg>{contour.major}% 간격(숫자 표시)
         </span>
+        <span className="inline-flex items-center gap-1">낮음<span className="w-16 h-2.5 inline-block opacity-60" style={{ background: `linear-gradient(90deg, ${seqColorSmooth(0)}, ${seqColorSmooth(0.5)}, ${seqColorSmooth(1)})` }} />높음</span>
         {contour.mean != null && <span>점선 안 <b>면적 가중 평균 {contour.mean.toFixed(1)}%</b></span>}
-        <span className="text-ink-3">점선 = 측정 지점이 둘러싸는 범위. 점선 바깥의 옅은 테두리는 측정 범위 밖으로 늘인 값이라 참고만 하세요.</span>
+        <span className="text-ink-3">점선 = 측정 지점이 둘러싸는 범위. 점선 바깥으로 흐려지는 부분은 측정 범위 밖으로 늘인 값이라 참고만 하세요.</span>
       </div>
     )}
     </>

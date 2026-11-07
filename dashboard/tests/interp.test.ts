@@ -29,3 +29,14 @@ describe("면적 가중(자연이웃) 보간", () => {
     for (const [x1, , x2] of segs) { expect(x1).toBeGreaterThan(0.35); expect(x2).toBeLessThan(0.65); }
   });
 });
+
+describe("등고선 선 잇기", () => {
+  it("한 수준의 선분이 하나의 선으로 이어진다", async () => {
+    const { chainSegments, isolines, sibsonGrid } = await import("../src/lib/interp");
+    const g = sibsonGrid([{ x: 0.2, y: 0.5, v: 30 }, { x: 0.8, y: 0.5, v: 70 }], 60, 30);
+    const segs = isolines(g, 50);
+    const lines = chainSegments(segs);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toHaveLength(segs.length + 1);
+  });
+});
