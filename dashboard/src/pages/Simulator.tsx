@@ -5,7 +5,7 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { hrefFor, useStore } from "../state/store";
 import { Button, Card, Kpi, Notice, PageHeader } from "../components/ui";
-import { SiteMap, type MapItem } from "../components/SiteMap";
+import { SiteMap, type MapDisplay, type MapItem } from "../components/SiteMap";
 import { atomicOrder, elementNameKo } from "../lib/elements";
 import { SiteLiteratureBlock } from "../components/LiteratureList";
 import {
@@ -26,6 +26,8 @@ export function SimulatorPage() {
   const setCfg = (p: Partial<SimConfig>) => setSim((s) => ({ ...s, config: { ...s.config, ...p } }));
   /** 지도 표시: "shape"(비구형 비율), "el:Fe"(원소 검출 비율), "rule:rail"(입자 유형 비율), "top"(지점별 대표 판정) — 기본은 모든 지점을 같은 기준으로 */
   const [mapMode, setMapMode] = useState<string>("shape");
+  /** 원(지점별 값) 또는 등고선(지점 사이를 면적 가중 평균으로 보간) */
+  const [mapDisplay, setMapDisplay] = useState<MapDisplay>("circle");
   const [siteId, setSiteId] = useState("gate");
   const [editing, setEditing] = useState(false);
   const planInput = useRef<HTMLInputElement>(null);
@@ -193,7 +195,17 @@ export function SimulatorPage() {
               <button key={id} onClick={() => setMapMode(`rule:${id}`)} className={`px-2 py-0.5 border rounded-[3px] ${mapMode === `rule:${id}` ? "bg-block text-white border-block" : "border-line-2 hover:border-ink"}`}>{r.label.replace(" 입자", "").replace(" 불규칙 유기", " 유기")}</button>
             ); })}
           </div>
-          <SiteMap items={mapView.items} sim={sim} setSim={setSim} selected={siteId} onSelect={setSiteId} editing={editing} />
+          <div className="flex flex-wrap items-center gap-1 mb-2 text-[12.5px]">
+            <span className="text-ink-3 mr-1">표시 방식</span>
+            {([["circle", "지점별 원"], ["contour", "등고선(면적 가중 보간)"]] as const).map(([v, label]) => (
+              <button key={v} disabled={v === "contour" && mapMode === "top"} onClick={() => setMapDisplay(v)}
+                className={`px-2 py-0.5 border rounded-[3px] disabled:opacity-40 ${mapDisplay === v && !(v === "contour" && mapMode === "top") || (v === "circle" && mapMode === "top") ? "bg-block text-white border-block" : "border-line-2 hover:border-ink"}`}>{label}</button>
+            ))}
+            {mapDisplay === "contour" && mapMode !== "top" && (
+              <span className="text-ink-3 ml-1">지점 사이 값은 측정값이 아니라, 각 지점이 차지하는 면적 비율로 가중 평균한 추정값입니다(자연이웃 보간).</span>
+            )}
+          </div>
+          <SiteMap items={mapView.items} sim={sim} setSim={setSim} selected={siteId} onSelect={setSiteId} editing={editing} display={mapMode === "top" ? "circle" : mapDisplay} />
           {mapMode === "top" && (
             <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[12.5px] text-ink-2">
               {SOURCE_RULES.map((r) => <span key={r.id} className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 inline-block" style={{ background: r.color }} />{r.label}</span>)}

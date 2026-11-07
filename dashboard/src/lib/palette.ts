@@ -42,3 +42,13 @@ export function elementColor(symbol: string, order: string[]): string {
   const i = order.indexOf(symbol);
   return i >= 0 && i < SERIES.length ? SERIES[i] : OTHER_COLOR;
 }
+
+/** 순차 단계 사이를 이어서 보간한 색(등고선 띠처럼 단계가 촘촘할 때) */
+export function seqColorSmooth(t: number): string {
+  if (!Number.isFinite(t)) return "#eeebe4";
+  const f = Math.max(0, Math.min(1, t)) * (SEQ.length - 1);
+  const i = Math.min(SEQ.length - 2, Math.floor(f)), u = f - i;
+  const rgb = (h: string) => [1, 3, 5].map((k) => parseInt(h.slice(k, k + 2), 16));
+  const a = rgb(SEQ[i]), b = rgb(SEQ[i + 1]);
+  return `#${a.map((c, k) => Math.round(c + (b[k] - c) * u).toString(16).padStart(2, "0")).join("")}`;
+}
