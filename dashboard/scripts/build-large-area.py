@@ -79,7 +79,7 @@ def main(folder: Path, out: Path):
             if d != d:  # NaN
                 continue
             dmax.append(round(d * 100))
-            ar.append(round(a * 100) if a == a else None)
+            ar.append(round(a * 100000) if a == a else None)  # 종횡비는 분류 경계(1.2, 1.7, 3)에 민감해 소수 다섯째 자리까지 보존
             s = 0.0
             for e in els:
                 v = num(r[idx[e]])
@@ -112,7 +112,7 @@ def main(folder: Path, out: Path):
         "source": folder.name,
         "builtAt": date.today().isoformat(),
         "instrument": "Phenom Particle Inspector (자동 입자 검출·EDS, 배율 150×)",
-        "scale": {"dmax": 100, "ar": 100, "wt": 10},
+        "scale": {"dmax": 100, "ar": 100000, "wt": 10},
         "groups": groups,
     }
     out.parent.mkdir(parents=True, exist_ok=True)
