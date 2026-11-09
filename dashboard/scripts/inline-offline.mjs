@@ -36,6 +36,15 @@ if (existsSync(sharedPath)) {
 } else {
   console.log("공유 데이터셋 없음(public/shared-data/dataset.json) — 데이터 없이 생성");
 }
+// 대면적 자동 분석 데이터(public/shared-data/large-area.json, scripts/build-large-area.py)도 있으면 넣는다
+const largePath = join(root, "public", "shared-data", "large-area.json");
+if (existsSync(largePath)) {
+  const json = readFileSync(largePath, "utf8");
+  JSON.parse(json);
+  const safe = json.replace(/</g, "\\u003c").replace(/ /g, "\\u2028").replace(/ /g, "\\u2029");
+  html = html.replace("<head>", () => `<head>\n<script>window.__SEMEDS_LARGE__ = ${safe};</script>`);
+  console.log(`대면적 분석 데이터 포함: ${(Buffer.byteLength(json) / 1024 / 1024).toFixed(1)} MB`);
+}
 if (/src="\.\/assets|href="\.\/assets/.test(html)) throw new Error("외부 assets 참조가 남아 있습니다.");
 
 const out = join(dist, "SEM-EDS 대시보드 (오프라인).html");

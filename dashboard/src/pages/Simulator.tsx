@@ -2,14 +2,16 @@
    ① 문헌 데이터베이스의 발생원별 지표 조건(규칙) → ② 입자별 조성·형상 조건 동시 적용(발생원 판정)과 건강 위해 연결
    → ③ 지점별 집계를 평면도에 표출, 기준값 변경에 따른 변화 확인
    → ④ 지점별 우선 관리 입자, 추가 분석이 필요한 원소·지점, 후속 세포 실험 시료 지점 판단. */
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { loadLargeArea, type LargeAreaSet } from "../lib/largeArea";
+import type { AnalysisSettings, Particle } from "../lib/types";
 import { hashParams, hrefFor, teamShareUrl, useStore } from "../state/store";
 import { Button, Card, Kpi, Notice, PageHeader } from "../components/ui";
 import { SiteMap, type MapDisplay, type MapItem } from "../components/SiteMap";
 import { atomicOrder, elementNameKo } from "../lib/elements";
 import { SiteLiteratureBlock } from "../components/LiteratureList";
 import {
-  DEFAULT_SIM_CONFIG, SOURCE_RULES, THRESHOLD_LABELS, mainElements, missingIndicators, ruleText, simulate, siteAdvice,
+  DEFAULT_SIM_CONFIG, SOURCE_RULES, THRESHOLD_LABELS, judgeParticle, mainElements, missingIndicators, ruleText, simulate, siteAdvice,
   type ParticleJudgement, type Rate, type RuleStat, type SimConfig, type SiteResult, type Simulation, type SourceRule,
 } from "../lib/sources";
 import { LITERATURE_DB } from "../config/siteLiterature";
@@ -20,8 +22,16 @@ const kn = (r: Rate | null | undefined) => (r && r.n ? `${r.k}/${r.n}` : "—");
 const ruleById = (id: string) => SOURCE_RULES.find((r) => r.id === id)!;
 
 export function SimulatorPage() {
-  const { particles, settings, sim, setSim, sharedInfo, data, loadShared, allIssues } = useStore();
-  const feMissing = useMemo(() => new Set(allIssues.filter((i) => i.code === "FE_NOT_IN_ELEMENT_LIST" && i.particleKey).map((i) => i.particleKey!)), [allIssues]);
+  const { particles: semParticles, settings, sim, setSim, sharedInfo, data, loadShared, allIssues } = useStore();
+  /** 데이터: SEM-EDS 단일입자(기본) 또는 대면적 자동 분석(Particle Inspector) */
+  const [src, setSrc] = useState<"sem" | "large">(() => (hashParams().get("src") === "large" ? "large" : "sem"));
+  const [la, setLa] = useState<LargeAreaSet | null | undefined>(undefined);
+  useEffect(() => {
+    if (src === "large" && la === undefined) loadLargeArea().then(setLa);
+  }, [src, la]);
+  const large = src === "large";
+  const particles = large ? la?.particles ?? [] : semParticles;
+  const feMissing = useMemo(() => (large ? new Set<string>() : new Set(allIssues.filter((i) => i.code === "FE_NOT_IN_ELEMENT_LIST" && i.particleKey).map((i) => i.particleKey!))), [allIssues, large]);
   const cfg = sim.config;
   const setCfg = (p: Partial<SimConfig>) => setSim((s) => ({ ...s, config: { ...s.config, ...p } }));
   /** 지도 표시: "shape"(비구형 비율), "el:Fe"(원소 검출 비율), "rule:rail"(입자 유형 비율), "top"(지점별 대표 판정) — 기본은 모든 지점을 같은 기준으로 */
@@ -34,7 +44,7 @@ export function SimulatorPage() {
   const [mapDisplay, setMapDisplay] = useState<MapDisplay>(() => (hashParams().get("view") === "contour" ? "contour" : "circle"));
   const [copied, setCopied] = useState(false);
   const copyShare = async () => {
-    const url = teamShareUrl(mapMode, mapDisplay);
+    const url = teamShareUrl(mapMode, mapDisplay, src);
     try {
       await navigator.clipboard.writeText(url);
     } catch {
@@ -75,7 +85,7 @@ export function SimulatorPage() {
       const el = mapMode.slice(3);
       return {
         title: `${el}(${elementNameKo(el)}) 검출 입자 비율`,
-        subtitle: <>원 안 숫자 = 그 지점 분석 입자 중 <b>{el}가 검출된 입자</b>의 비율(스폿 3곳 중 한 곳 이상), 원 아래 = 검출 입자 수/분석 입자 수와 검출 입자의 평균 함량. 모든 지점이 같은 기준입니다.
+        subtitle: <>원 안 숫자 = 그 지점 분석 입자 중 <b>{el}가 검출된 입자</b>의 비율({large ? "자동 분석 EDS에서 0 wt% 초과" : "스폿 3곳 중 한 곳 이상"}), 원 아래 = 검출 입자 수/분석 입자 수와 검출 입자의 평균 함량. 모든 지점이 같은 기준입니다.
           {el === "Fe" && feMissing.size > 0 && <span className="block text-[#6b4b00] mt-1">주의: 화장품(F-1) 입자 {feMissing.size}개는 Phenom 원소 목록에 Fe가 빠진 채 정량되어, 화장품 지점의 Fe 비율은 실제보다 낮게 나옵니다.</span>}</>,
         items: res.sites.map((s) => {
           const ps = s.judged.filter((j) => j.particle.edsValid).map((j) => j.particle);
@@ -124,10 +134,26 @@ export function SimulatorPage() {
     }
   };
 
+  const groupRows = useMemo(() => (large && la ? groupStats(la, cfg, settings) : []), [large, la, cfg, settings]);
+  const toggle = <SourceToggle src={src} setSrc={setSrc} semN={semParticles.length} la={la} />;
+
+  if (large && !particles.length) {
+    return (
+      <>
+        <PageHeader title="AI 시뮬레이터" />
+        {toggle}
+        <Notice kind={la === undefined ? "info" : "warning"} title={la === undefined ? "대면적 분석 데이터를 읽는 중입니다" : "대면적 분석 데이터가 없습니다"}>
+          {la === undefined ? "잠시만 기다려 주세요." : <>배포판에 shared-data/large-area.json 파일이 없습니다. scripts/build-large-area.py로 만든 뒤 다시 배포하세요.</>}
+        </Notice>
+      </>
+    );
+  }
+
   if (!particles.length) {
     return (
       <>
         <PageHeader title="AI 시뮬레이터" />
+        {toggle}
         <Notice kind="warning" title="데이터가 없습니다">
           {sharedInfo ? <>강남역 5개 지점 데이터(팀 공유 데이터셋, 입자 {sharedInfo.particles}개)를 열 수 있습니다. <Button small variant="primary" onClick={() => loadShared()}>공유 데이터셋 열기</Button> 또는 </> : null}
           <a className="text-accent underline" href={hrefFor({ page: "data" })}>데이터 관리</a>에서 Phenom 원본 폴더를 올려 주세요.
@@ -142,8 +168,21 @@ export function SimulatorPage() {
         title="AI 시뮬레이터 — 지점별 발생원 판정"
         description="환승 거점형 지하상가의 지점별 단일입자 형상·조성 분석. 선행연구의 발생원별 지표 조건을 규칙으로 구성해 측정값에 적용하고, 입자마다 조성과 형상 조건을 동시에 적용해 발생원을 판정한 뒤 보고된 건강 위해를 연결합니다. 지점별 집계 결과는 지하상가 평면도에 표출합니다."
       />
+      {toggle}
+      {large && la && (
+        <div className="mb-4">
+          <Notice kind="warning" title="대면적 자동 분석 데이터로 보는 중입니다">
+            Phenom Particle Inspector가 필터 위 넓은 면적에서 입자를 자동으로 찾아 짧은 시간 EDS를 얻은 값입니다(배율 {la.data.groups[0]?.mag.join(", ")}×, 최대 길이 5 µm 이상만 저장).
+            입자 수가 많아 비율의 신뢰구간은 좁지만, 측정 시간이 짧아 미량 원소가 잘못 검출될 수 있고(Newbury 2009, 문헌 A36) 섬유 필터 배경이 섞입니다.
+            아래 <a className="underline" href="#reference">참조 그룹 비교</a>에서 Free Filter·Bio Filter 값과 함께 보세요.
+            {res.sites.some((s) => !la.data.groups.some((g) => g.siteId === s.site.id)) && (
+              <> 대면적 파일이 없는 지점: <b>{res.sites.filter((s) => !la.data.groups.some((g) => g.siteId === s.site.id)).map((s) => s.site.label).join(", ")}</b>.</>
+            )}
+          </Notice>
+        </div>
+      )}
 
-      {res.sites.every((x) => x.total === 0) && (
+      {!large && res.sites.every((x) => x.total === 0) && (
         <div className="mb-4">
           <Notice kind="warning" title="지금 화면의 데이터에는 5개 지점 입자가 없습니다">
             이 브라우저에 예전에 저장한 데이터(입자 {particles.length}개)가 열려 있습니다.
@@ -170,7 +209,7 @@ export function SimulatorPage() {
 
       {/* 분석 요약 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-        <Kpi label="분석 입자" value={nJudged} unit="개" detail={cfg.applySize ? `최대 길이 ${cfg.sizeMin}~${cfg.sizeMax} µm · 5개 지점` : "크기 제한 없음 · 5개 지점"} />
+        <Kpi label="분석 입자" value={nJudged} unit="개" detail={`${cfg.applySize ? `최대 길이 ${cfg.sizeMin}~${cfg.sizeMax} µm` : "크기 제한 없음"} · ${large ? `대면적 ${res.sites.filter((x) => x.total).length}개 지점` : "5개 지점"}`} />
         <Kpi label="주요 구성 원소" value={<span className="font-mono text-[0.72em]">{mains.map((m) => m.el).join(", ") || "—"}</span>} detail="분석 입자 평균 wt% 상위 4개" />
         <Kpi label={`비구형 입자 (종횡비 ≥ ${cfg.thresholds.nonSphereAr})`} value={pctTxt(res.overallNonSphere)} detail={`${kn(res.overallNonSphere)} 입자`} />
         <Kpi label="비구형 비율 최고·최저" value={<span className="text-[0.62em]">{nsMax ? `${nsMax.site.short} ${pctTxt(nsMax.nonSphere)}` : "—"}</span>} detail={nsMin ? `최저 ${nsMin.site.short} ${pctTxt(nsMin.nonSphere)}` : undefined} />
@@ -292,8 +331,16 @@ export function SimulatorPage() {
         </Card>
       </div>
 
+      {large && la && (
+        <div className="mt-4" id="reference">
+          <Card title="참조 그룹 비교 — 지점 vs Free Filter · Bio Filter" subtitle={<>같은 기준값으로 대면적 파일마다 판정한 비율입니다. 참조 그룹(지점이 아닌 파일)은 지점 통계·지도에 들어가지 않습니다. 참조 그룹에서도 비슷한 비율이 나오는 유형·원소는 필터 배경이나 자동 분석 오검출일 수 있으니, <b>지점 값이 참조보다 뚜렷하게 높은지</b>를 보세요.</>}>
+            <ReferenceTable rows={groupRows} />
+          </Card>
+        </div>
+      )}
+
       {/* 입자 목록 */}
-      <div className="mt-4">
+      {!large && <div className="mt-4">
         <Card title={`${site.site.label} 입자 ${site.judged.length}개`} subtitle="사진을 누르면 입자 상세(스폿별 원소 구성비)로 이동합니다. 태그 = 해당한 규칙.">
           {site.judged.length === 0 ? <p className="text-[14px] text-ink-2">분석 대상 입자가 없습니다.</p> : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6 gap-3">
@@ -301,7 +348,7 @@ export function SimulatorPage() {
             </div>
           )}
         </Card>
-      </div>
+      </div>}
 
       {/* 기준값 변경 */}
       <div className="grid grid-cols-1 xl:grid-cols-[360px_minmax(0,1fr)] gap-4 mt-4" id="threshold">
@@ -327,7 +374,8 @@ export function SimulatorPage() {
 
       <div className="mt-4">
         <Notice kind="info" title="해석할 때 주의할 점">
-          지점당 입자 수가 적고 종횡비 경계는 선행연구에 의해 설정된 값이며, 총량적 측면에서 건강에 미치는 위해 정도를 규명하려면 후속 검증이 필요합니다. 판정 비율은 노출량이나 건강 위험의 크기를 뜻하지 않습니다.
+          {large ? <>대면적 자동 분석은 입자마다 짧은 시간 EDS를 얻어 미량 원소(Cu, Sb, Ba, Mn 등)가 잘못 검출될 수 있고, 종횡비는 자동 분할 결과라 섬유 필터와 겹친 입자에서 크게 나올 수 있습니다. 입자 사진이 없어 입자별 확인은 SEM-EDS 단일입자 데이터에서 하세요. </> : null}
+          {large ? "" : "지점당 입자 수가 적고 "}종횡비 경계는 선행연구에 의해 설정된 값이며, 총량적 측면에서 건강에 미치는 위해 정도를 규명하려면 후속 검증이 필요합니다. 판정 비율은 노출량이나 건강 위험의 크기를 뜻하지 않습니다.
           원소 값은 입자 위 EDS 스폿 3곳의 평균이고 EDS로는 결정상을 구분할 수 없으며, 포집 지점이 곧 발생원은 아닙니다. 종횡비는 섬유 필터 배경 위 자동 측정값이라 검토가 필요합니다.
         </Notice>
       </div>
@@ -465,5 +513,116 @@ function NumIn({ v, on, step }: { v: number; on: (v: number) => void; step: numb
   return (
     <input type="number" step={step} value={v} onChange={(e) => { const x = parseFloat(e.target.value); if (Number.isFinite(x)) on(x); }}
       className="w-20 border border-line-2 rounded-[3px] px-1.5 py-0.5 text-right tnum bg-white" />
+  );
+}
+
+/* ---------- 대면적 자동 분석 ---------- */
+
+function SourceToggle({ src, setSrc, semN, la }: { src: "sem" | "large"; setSrc: (v: "sem" | "large") => void; semN: number; la: LargeAreaSet | null | undefined }) {
+  const opts: Array<["sem" | "large", string, string]> = [
+    ["sem", "SEM-EDS 단일입자", semN ? `입자 ${semN}개 · 사진·스폿 3곳 평균` : "사진·스폿 3곳 평균"],
+    ["large", "대면적 자동 분석", la ? `Particle Inspector · 입자 ${la.particles.length.toLocaleString()}개(지점) + 참조 ${(la.data.groups.filter((g) => !g.siteId).reduce((a, g) => a + g.n, 0)).toLocaleString()}개` : "Phenom Particle Inspector"],
+  ];
+  return (
+    <div className="flex flex-wrap items-center gap-2 mb-4 text-[13.5px]" role="radiogroup" aria-label="분석 데이터">
+      <span className="text-ink-3 mr-1">분석 데이터</span>
+      {opts.map(([v, t, d]) => (
+        <button key={v} role="radio" aria-checked={src === v} onClick={() => setSrc(v)}
+          className={`text-left px-3 py-1.5 border rounded-[3px] ${src === v ? "bg-block text-white border-block" : "bg-surface border-line-2 hover:border-ink"}`}>
+          <div className="font-semibold leading-tight">{t}</div>
+          <div className={`text-[12px] leading-tight ${src === v ? "text-white/75" : "text-ink-3"}`}>{d}</div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const REF_ELEMENTS = ["Fe", "Mn", "Cu", "Ba", "Sb", "Ti", "Zn", "Na", "Cl", "Ca", "S", "Mg", "K", "P"];
+
+interface GroupRow {
+  id: string;
+  label: string;
+  file: string;
+  isSite: boolean;
+  total: number;
+  n: number;
+  nonSphere: Rate;
+  rules: Record<string, Rate>;
+  els: Record<string, Rate>;
+}
+
+function groupStats(la: LargeAreaSet, cfg: SimConfig, settings: AnalysisSettings): GroupRow[] {
+  const r = (k: number, n: number): Rate => ({ k, n, pct: n ? (k / n) * 100 : null, ci: null });
+  const rows = la.data.groups.map((g) => {
+    const ps: Particle[] = la.byGroup[g.id] ?? [];
+    const js = ps.map((p) => judgeParticle(p, cfg, settings)).filter((j) => j.inSize === true);
+    const rules: Record<string, Rate> = {};
+    for (const rule of SOURCE_RULES) {
+      const ev = js.filter((j) => j.results[rule.id].match !== null);
+      rules[rule.id] = r(ev.filter((j) => j.results[rule.id].match).length, ev.length);
+    }
+    const ns = js.filter((j) => j.nonSphere !== null);
+    const els: Record<string, Rate> = {};
+    for (const el of REF_ELEMENTS) {
+      if (!g.elements.includes(el)) { els[el] = r(0, 0); continue; }
+      els[el] = r(js.filter((j) => (j.particle.elements[el]?.wt ?? 0) > 0).length, js.length);
+    }
+    return { id: g.id, label: g.label, file: g.file, isSite: !!g.siteId, total: ps.length, n: js.length, nonSphere: r(ns.filter((j) => j.nonSphere).length, ns.length), rules, els };
+  });
+  return [...rows.filter((x) => x.isSite), ...rows.filter((x) => !x.isSite)];
+}
+
+function ReferenceTable({ rows }: { rows: GroupRow[] }) {
+  const refs = rows.filter((r) => !r.isSite);
+  const refMax = (get: (r: GroupRow) => Rate) => Math.max(0, ...refs.map((r) => get(r).pct ?? 0));
+  const cell = (row: GroupRow, get: (r: GroupRow) => Rate, key: string) => {
+    const v = get(row);
+    // 지점 값이 참조 그룹 최댓값의 2배 이상이고 5%p 이상 높으면 강조
+    const hi = row.isSite && v.n > 0 && (v.pct ?? 0) >= 2 * refMax(get) && (v.pct ?? 0) - refMax(get) >= 5;
+    return (
+      <td key={key} className="num whitespace-nowrap" style={{ background: v.k ? seqColor((v.pct ?? 0) / 100) + "44" : undefined, fontWeight: hi ? 700 : undefined, outline: hi ? "2px solid #282828" : undefined, outlineOffset: -2 }}>
+        {v.n ? `${(v.pct ?? 0).toFixed(1)}%` : "—"}
+      </td>
+    );
+  };
+  const head = (
+    <tr>
+      <th>파일</th><th className="num whitespace-nowrap">분석 입자</th>
+      <th className="num whitespace-nowrap">비구형</th>
+      {SOURCE_RULES.map((r) => <th key={r.id} className="num whitespace-nowrap" title={r.source}>{r.label.replace(" 입자", "")}</th>)}
+    </tr>
+  );
+  return (
+    <div className="space-y-4">
+      <div className="overflow-x-auto">
+        <table className="data text-[13px]">
+          <thead>{head}</thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.id} className={row.isSite ? "" : "bg-[#f3f1ec]"}>
+                <td className="whitespace-nowrap"><b>{row.label}</b>{row.isSite ? null : <span className="ml-1 text-[11.5px] text-ink-3">참조</span>}<div className="text-[11px] text-ink-3 font-mono break-all max-w-[200px]">{row.file}</div></td>
+                <td className="num whitespace-nowrap">{row.n.toLocaleString()}{row.total !== row.n && <div className="text-[11.5px] text-ink-3">전체 {row.total.toLocaleString()}</div>}</td>
+                {cell(row, (x) => x.nonSphere, "ns")}
+                {SOURCE_RULES.map((r) => cell(row, (x) => x.rules[r.id], r.id))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="data text-[13px]">
+          <thead><tr><th>원소 검출 입자 비율</th>{REF_ELEMENTS.map((el) => <th key={el} className="num font-mono">{el}</th>)}</tr></thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.id} className={row.isSite ? "" : "bg-[#f3f1ec]"}>
+                <td className="whitespace-nowrap"><b>{row.label}</b>{row.isSite ? null : <span className="ml-1 text-[11.5px] text-ink-3">참조</span>}</td>
+                {REF_ELEMENTS.map((el) => cell(row, (x) => x.els[el], el))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-[12.5px] text-ink-3">굵은 테두리 = 지점 값이 참조 그룹(Free·Bio Filter) 최댓값의 2배 이상이면서 5%p 이상 높은 칸. 비율은 지금 기준값(크기 범위·종횡비·함량 기준)으로 계산합니다. Free Filter·Bio Filter가 무엇을 채취한 시료인지(공시료인지, 공기청정기 필터인지)에 따라 해석이 달라지므로 확인이 필요합니다.</p>
+    </div>
   );
 }

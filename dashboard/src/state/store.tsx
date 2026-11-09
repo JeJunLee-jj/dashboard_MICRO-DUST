@@ -56,9 +56,9 @@ export function hashParams(): URLSearchParams {
 }
 
 /** 팀원에게 같은 화면을 보여주는 링크: 팀 공유 데이터셋 + 기본 설정 + 지도 표시 기준·방식 */
-export function teamShareUrl(map: string, view: string): string {
+export function teamShareUrl(map: string, view: string, src: "sem" | "large" = "sem"): string {
   const { origin, pathname } = window.location;
-  return `${origin}${pathname}#/simulator?team=1&map=${encodeURIComponent(map)}&view=${encodeURIComponent(view)}`;
+  return `${origin}${pathname}#/simulator?team=1&map=${encodeURIComponent(map)}&view=${encodeURIComponent(view)}${src === "large" ? "&src=large" : ""}`;
 }
 
 function parseHash(): Route {
