@@ -3,7 +3,7 @@
    → ③ 지점별 집계를 평면도에 표출, 기준값 변경에 따른 변화 확인
    → ④ 지점별 우선 관리 입자, 추가 분석이 필요한 원소·지점, 후속 세포 실험 시료 지점 판단. */
 import { useMemo, useRef, useState, type ReactNode } from "react";
-import { hrefFor, useStore } from "../state/store";
+import { hashParams, hrefFor, teamShareUrl, useStore } from "../state/store";
 import { Button, Card, Kpi, Notice, PageHeader } from "../components/ui";
 import { SiteMap, type MapDisplay, type MapItem } from "../components/SiteMap";
 import { atomicOrder, elementNameKo } from "../lib/elements";
@@ -25,9 +25,24 @@ export function SimulatorPage() {
   const cfg = sim.config;
   const setCfg = (p: Partial<SimConfig>) => setSim((s) => ({ ...s, config: { ...s.config, ...p } }));
   /** 지도 표시: "shape"(비구형 비율), "el:Fe"(원소 검출 비율), "rule:rail"(입자 유형 비율), "top"(지점별 대표 판정) — 기본은 모든 지점을 같은 기준으로 */
-  const [mapMode, setMapMode] = useState<string>("shape");
+  // 공유 링크로 열면 링크에 담긴 표시 기준·방식으로 시작
+  const [mapMode, setMapMode] = useState<string>(() => {
+    const m = hashParams().get("map") ?? "";
+    return m === "shape" || m === "top" || /^el:[A-Z][a-z]?$/.test(m) || (m.startsWith("rule:") && SOURCE_RULES.some((r) => `rule:${r.id}` === m)) ? m : "shape";
+  });
   /** 원(지점별 값) 또는 등고선(지점 사이를 면적 가중 평균으로 보간) */
-  const [mapDisplay, setMapDisplay] = useState<MapDisplay>("circle");
+  const [mapDisplay, setMapDisplay] = useState<MapDisplay>(() => (hashParams().get("view") === "contour" ? "contour" : "circle"));
+  const [copied, setCopied] = useState(false);
+  const copyShare = async () => {
+    const url = teamShareUrl(mapMode, mapDisplay);
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      window.prompt("이 링크를 복사해 팀원에게 보내세요", url);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
   const [siteId, setSiteId] = useState("gate");
   const [editing, setEditing] = useState(false);
   const planInput = useRef<HTMLInputElement>(null);
@@ -215,6 +230,7 @@ export function SimulatorPage() {
           <div className="flex flex-wrap items-center gap-2 mt-2 text-[13px]">
             <Button small variant={editing ? "primary" : "default"} onClick={() => setEditing((v) => !v)}>{editing ? "위치 옮기기 끝" : "마커 위치 옮기기"}</Button>
             <Button small onClick={() => planInput.current?.click()}>다른 평면도 올리기</Button>
+            <Button small onClick={copyShare}>{copied ? "링크 복사됨" : "이 화면 공유 링크 복사"}</Button>
             {(sim.floorPlan || Object.keys(sim.positions).length > 0) && <Button small variant="ghost" onClick={() => setSim((s) => ({ ...s, floorPlan: null, positions: {} }))}>기본 배치도로</Button>}
             <input ref={planInput} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPlan(f); e.target.value = ""; }} />
           </div>

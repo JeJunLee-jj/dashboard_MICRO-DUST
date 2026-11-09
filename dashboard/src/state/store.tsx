@@ -48,8 +48,21 @@ export interface Route {
   particleKey?: string;
 }
 
+/** 공유 링크 옵션(#/simulator?team=1&map=shape&view=contour) — 주소의 '?' 뒤 */
+export function hashParams(): URLSearchParams {
+  const h = window.location.hash;
+  const i = h.indexOf("?");
+  return new URLSearchParams(i >= 0 ? h.slice(i + 1) : "");
+}
+
+/** 팀원에게 같은 화면을 보여주는 링크: 팀 공유 데이터셋 + 기본 설정 + 지도 표시 기준·방식 */
+export function teamShareUrl(map: string, view: string): string {
+  const { origin, pathname } = window.location;
+  return `${origin}${pathname}#/simulator?team=1&map=${encodeURIComponent(map)}&view=${encodeURIComponent(view)}`;
+}
+
 function parseHash(): Route {
-  const h = decodeURIComponent(window.location.hash.replace(/^#\/?/, ""));
+  const h = decodeURIComponent(window.location.hash.replace(/^#\/?/, "").split("?")[0]);
   const [page, ...rest] = h.split("/");
   const pages: Route["page"][] = ["simulator", "literature", "hazard", "particles", "data"];
   const p = (pages as string[]).includes(page) ? (page as Route["page"]) : "simulator";
@@ -181,11 +194,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   /* ---- 자동 저장(IndexedDB): 시작할 때 복원, 사용자 데이터가 바뀌면 저장 ---- */
   // 공유 데이터셋 적용: 처음 방문(설정 저장 기록 없음)이면 분석 설정·규칙도 스냅샷 것으로 맞춘다
-  const applyShared = useCallback((r: BackupContent, applySettings: boolean) => {
+  const applyShared = useCallback((r: BackupContent, applySettings: boolean, ignoreOwn = false) => {
     setData((d) => {
       revokeImages(d.images);
-      return { ...r.state, origin: "user", shared: { savedAt: r.savedAt, note: r.note }, overrides: { ...r.state.overrides, ...readLS<Record<string, UserOverride>>(LS.overrides, {}) } };
+      return { ...r.state, origin: "user", shared: { savedAt: r.savedAt, note: r.note }, overrides: { ...r.state.overrides, ...(ignoreOwn ? {} : readLS<Record<string, UserOverride>>(LS.overrides, {})) } };
     });
+    if (ignoreOwn) {
+      // 팀 공유 링크: 이 브라우저에 저장된 설정 대신 기본 설정으로 보여준다(저장된 설정은 그대로 둔다)
+      setSettingsState(DEFAULT_SETTINGS);
+      setHazardState(DEFAULT_HAZARD_RULES);
+      setRulesState(DEFAULT_CLASSIFICATION_RULES);
+      setSimState(DEFAULT_SIM);
+    }
     if (applySettings) {
       const ex = r.extras as { settings?: AnalysisSettings; hazardRules?: HazardRule[]; rules?: ClassificationRules; sim?: Partial<SimSettings> };
       if (ex.settings) setSettingsState({ ...DEFAULT_SETTINGS, ...ex.settings });
@@ -210,6 +230,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       // 이 브라우저에 저장된 내 데이터가 비어 있거나, 5개 지점 입자가 없는 예전 데이터인데 더 최신 공유 데이터셋이 있으면
       // 공유 데이터셋을 먼저 보여준다(내 데이터는 '저장된 내 데이터 다시 열기'로 계속 열 수 있음).
       const ownHasSites = !!own?.state.meta.some((m) => matchSiteText(m.collection_location) || matchSiteText(m.sample_id));
+      const team = hashParams().get("team") === "1";
+      if (team && shared) {
+        applyShared(shared, true, true);
+        if (own) setPersist({ status: "idle", hasSaved: true });
+        restoreDone.current = true;
+        return;
+      }
       const ownUsable = !!own && own.state.origin === "user" && own.state.meta.length > 0 &&
         (!shared || ownHasSites || new Date(own.savedAt) > new Date(shared.savedAt));
       if (own && ownUsable) {
