@@ -1,92 +1,65 @@
-/* 지점별 선행연구 — 발생원·지표 원소와 건강 영향(연구진이 정리한 문헌 목록, 2026-10-26 + 초록 인용 문헌).
-   한 줄 요약은 연구진 정리 문구와 초록 문구를 그대로 쓴다. 위해성은 '그 발생원·화학종에서 보고된 사례'이며
+/* 문헌 데이터베이스 — 연구진 문헌 목록 '강남역 지하상가 미세먼지 문헌 데이터베이스(70편, 2026-11-06)'.
+   literatureDb.json은 scripts/build-literature-db.py로 마크다운에서 만든다(목록이 바뀌면 다시 실행).
+   A부 40편: 목표종·형상·배경·방법 근거, B부 30편: 인체 영향 사례. 인체 영향은 '선행연구에서 보고된 사례'이며
    우리 입자의 위해 정도를 뜻하지 않는다. */
+import db from "./literatureDb.json";
 
-export interface LitItem {
-  /** 무엇에 대한 근거인지(연구진 요약) */
-  topic: string;
+export type LitKind = "건강 영향" | "목표종·조성" | "형상" | "배경" | "분석 방법";
+
+export interface DbEntry {
+  /** 문헌 번호(A01~A40, B01~B30) */
+  no: string;
+  part: "A" | "B";
+  /** 소제목(예: 지하철 목표종 원소별) */
+  group: string;
+  /** 발생원·지점(예: 지하철 개찰구) */
+  source: string;
   cite: string;
+  title: string;
+  journal: string;
+  /** 용도·핵심(A부) 또는 핵심 내용(B부) */
+  use: string;
+  /** B부 연구 유형(역학, 독성, 발암성 분류 등) */
+  type: string;
+  /** B부 원소·노출 */
+  element: string;
   url: string;
-  kind: "건강 영향" | "발생원·조성" | "형상" | "배경";
+  doi: string;
+  /** ● 서지 확인, ◐ 일부 미확인 */
+  verified: boolean;
+  kind: LitKind;
 }
+
+export interface SiteTarget {
+  site: string;
+  elements: string[];
+  refs: string[];
+}
+
+export const LITERATURE_DB = db.entries as DbEntry[];
+export const SITE_TARGETS = db.targets as SiteTarget[];
+export const LITERATURE_SOURCE_FILE = db.source;
+
+export const litByNo = (no: string) => LITERATURE_DB.find((x) => x.no === no) ?? null;
+
+/** 지점 id → 문헌 목록의 지점 이름 */
+const SITE_NAME: Record<string, string> = { gate: "지하철 개찰구", clothing: "의류매장", cosmetic: "화장품 매장", food: "음식점", cafe: "카페·간편식" };
 
 export interface SiteLiterature {
   siteId: string;
-  /** 지표 원소(초록과 연구진 문헌 목록 기준) */
+  /** 지점별 최종 목표종 */
   indicators: string[];
-  items: LitItem[];
+  /** 목표종 근거(A부) + 인체 영향 사례(B부) */
+  items: DbEntry[];
 }
-
-export const SITE_LITERATURE: SiteLiterature[] = [
-  {
-    siteId: "gate", indicators: ["Fe", "Mn", "Cu", "Ba", "Sb"],
-    items: [
-      { topic: "안티몬 발암성 — 브레이크 패드", cite: "von Uexküll et al. (2005). Journal of Cleaner Production, 13, 19–31.", url: "https://www.globalcommunity.org/business/Antimony%20in%20Brake%20Pads%20-%20Jnl%20of%20Cleaner%20Production%20-%202005.pdf", kind: "건강 영향" },
-      { topic: "지하철 종사자 단기 호흡기 영향 없음", cite: "Scand J Work Environ Health (2011), 37(2), 129–135.", url: "https://www.sjweh.fi/article/3074", kind: "건강 영향" },
-      { topic: "지하철 입자 형상 — 판상·파편형", cite: "Moreno et al. (2017). Environmental Science: Processes & Impacts.", url: "https://pubs.rsc.org/en/content/articlehtml/2017/em/c6em00576d", kind: "형상" },
-    ],
-  },
-  {
-    siteId: "cosmetic", indicators: ["Ti", "Zn", "Mg"],
-    items: [
-      { topic: "화장용 탈크 흡입 — 폐 육아종증 증례", cite: "Jasuja et al. (2017). J Investig Med High Impact Case Rep, 5(3).", url: "https://journals.sagepub.com/doi/10.1177/2324709617728527", kind: "건강 영향" },
-      { topic: "호흡성 TiO₂ 경고 자료(공기 중 비결합 호흡성 입자)", cite: "California OEHHA Proposition 65 Fact Sheet — Titanium dioxide.", url: "https://www.p65warnings.ca.gov/fact-sheets/titanium-dioxide-airborne-unbound-particles-respirable-size", kind: "건강 영향" },
-    ],
-  },
-  {
-    siteId: "cafe", indicators: ["K", "Ca", "P"],
-    items: [
-      { topic: "커피 로스팅·포장 종사자 호흡기 이상", cite: "Bailey et al. (2020). Frontiers in Public Health, 8, 5.", url: "https://stacks.cdc.gov/view/cdc/223273", kind: "건강 영향" },
-      { topic: "제빵사 천식·비염 용량반응", cite: "Brisman et al. (2000). Occup Environ Med, 57(5), 335–340.", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC1739948", kind: "건강 영향" },
-      { topic: "베이커리 실내 PM 조성 — K가 제빵 지표", cite: "Ielpo et al. (2020). Atmosphere, 11(4), 415.", url: "https://www.mdpi.com/2073-4433/11/4/415", kind: "발생원·조성" },
-    ],
-  },
-  {
-    siteId: "food", indicators: ["Ca", "Cl", "S"],
-    items: [
-      { topic: "조리 방식별 PM2.5 성분비", cite: "Wang et al. (2015). Aerosol and Air Quality Research, 15, 2357–2366.", url: "https://aaqr.org/articles/aaqr-15-02-siiac-0079", kind: "발생원·조성" },
-    ],
-  },
-  {
-    siteId: "clothing", indicators: ["C", "O", "Ti"],
-    items: [
-      { topic: "면방직 노동자 폐기능 15년 추적", cite: "Christiani et al. (2001). Am J Respir Crit Care Med, 163(4), 847–853.", url: "https://stacks.cdc.gov/view/cdc/186216", kind: "건강 영향" },
-    ],
-  },
-];
-
-export const BACKGROUND_LITERATURE: LitItem[] = [
-  { topic: "서울 수도권 지하상가 PM2.5와 미량원소(대상지 배경)", cite: "Won et al. (2021). IJERPH, 18(1), 297.", url: "https://www.mdpi.com/1660-4601/18/1/297", kind: "배경" },
-];
-
-/* 문헌 데이터베이스 표: 지점별 문헌 + 배경 + 초록에 인용된 문헌 + 건강 영향 분류 자료.
-   url이 없는 문헌은 초록 인용 표기만 있고 링크를 확인하지 않은 것이다. */
-export interface DbEntry extends LitItem {
-  source: string;
-}
-
-const ABSTRACT_REFS: DbEntry[] = [
-  { source: "대상지 배경", topic: "다중이용시설 미세먼지 노출 시 폐 상피세포 NF-κB 발현 증가", cite: "Lee et al. (2026)", url: "", kind: "건강 영향" },
-  { source: "대상지 배경", topic: "입자의 건강 영향은 크기·화학 성분·형상에 따라 달라질 수 있음", cite: "Hedberg et al. (2010)", url: "", kind: "건강 영향" },
-  { source: "철도 마모", topic: "철도 마모 입자의 DNA 손상", cite: "Karlsson et al. (2005). Chem. Res. Toxicol. 18(1), 19–23.", url: "https://doi.org/10.1021/tx049723c", kind: "건강 영향" },
-  { source: "의류(섬유)", topic: "섬유 입자 — 종횡비 3 이상의 형상", cite: "Vianello et al. (2019)", url: "", kind: "형상" },
-  { source: "의류(섬유)", topic: "섬유 입자 — Ti 등 첨가 원소", cite: "Filella et al. (2022)", url: "", kind: "발생원·조성" },
-  { source: "화장품", topic: "Mg-Si 판상의 탈크", cite: "Rasmussen et al. (2019). IJERPH 16(20), 3830.", url: "https://doi.org/10.3390/ijerph16203830", kind: "발생원·조성" },
-  { source: "화장품", topic: "TiO₂·ZnO 포함", cite: "Shi et al. (2013)", url: "", kind: "발생원·조성" },
-  { source: "조리(음식점)", topic: "C-rich 구형 입자와 Ca-S 입자", cite: "Li et al. (2019)", url: "", kind: "발생원·조성" },
-  { source: "조리(음식점)", topic: "C-rich 구형 입자와 Ca-S 입자", cite: "Dou et al. (2018)", url: "", kind: "발생원·조성" },
-  { source: "카페·간편식", topic: "K, Ca, P를 포함한 불규칙 유기 입자", cite: "Zarrinbakhsh et al. (2016)", url: "", kind: "발생원·조성" },
-  { source: "카페·간편식", topic: "기도 질환과의 연관", cite: "Bailey et al. (2015)", url: "", kind: "건강 영향" },
-];
-
-const SITE_SOURCE: Record<string, string> = { gate: "철도 마모", cosmetic: "화장품", cafe: "카페·간편식", food: "조리(음식점)", clothing: "의류(섬유)" };
-
-export const LITERATURE_DB: DbEntry[] = [
-  ...BACKGROUND_LITERATURE.map((x) => ({ ...x, source: "대상지 배경" })),
-  ...ABSTRACT_REFS,
-  ...SITE_LITERATURE.flatMap((s) => s.items.map((x) => ({ ...x, source: SITE_SOURCE[s.siteId] }))),
-];
 
 export function siteLiterature(siteId: string): SiteLiterature | null {
-  return SITE_LITERATURE.find((s) => s.siteId === siteId) ?? null;
+  const name = SITE_NAME[siteId];
+  if (!name) return null;
+  const target = SITE_TARGETS.find((t) => t.site === name);
+  const core = (target?.refs ?? []).map(litByNo).filter((x): x is DbEntry => !!x);
+  const health = LITERATURE_DB.filter((x) => x.part === "B" && x.source === name);
+  return { siteId, indicators: target?.elements ?? [], items: [...core, ...health] };
 }
+
+export const BACKGROUND_LITERATURE: DbEntry[] = LITERATURE_DB.filter((x) => x.group === "서론·대상지 배경");
