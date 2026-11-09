@@ -174,7 +174,7 @@ export function SimulatorPage() {
           <Notice kind="warning" title="대면적 자동 분석 데이터로 보는 중입니다">
             Phenom Particle Inspector가 필터 위 넓은 면적에서 입자를 자동으로 찾아 짧은 시간 EDS를 얻은 값입니다(배율 {la.data.groups[0]?.mag.join(", ")}×, 최대 길이 5 µm 이상만 저장).
             입자 수가 많아 비율의 신뢰구간은 좁지만, 측정 시간이 짧아 미량 원소가 잘못 검출될 수 있고(Newbury 2009, 문헌 A36) 섬유 필터 배경이 섞입니다.
-            아래 <a className="underline" href="#reference">참조 그룹 비교</a>에서 Free Filter·Bio Filter 값과 함께 보세요.
+            아래 <a className="underline" href="#reference">참조 그룹 비교</a>에서 지점이 아닌 파일(Bio Filter) 값과 함께 보세요.
             {res.sites.some((s) => !la.data.groups.some((g) => g.siteId === s.site.id)) && (
               <> 대면적 파일이 없는 지점: <b>{res.sites.filter((s) => !la.data.groups.some((g) => g.siteId === s.site.id)).map((s) => s.site.label).join(", ")}</b>.</>
             )}
@@ -333,7 +333,7 @@ export function SimulatorPage() {
 
       {large && la && (
         <div className="mt-4" id="reference">
-          <Card title="참조 그룹 비교 — 지점 vs Free Filter · Bio Filter" subtitle={<>같은 기준값으로 대면적 파일마다 판정한 비율입니다. 참조 그룹(지점이 아닌 파일)은 지점 통계·지도에 들어가지 않습니다. 참조 그룹에서도 비슷한 비율이 나오는 유형·원소는 필터 배경이나 자동 분석 오검출일 수 있으니, <b>지점 값이 참조보다 뚜렷하게 높은지</b>를 보세요.</>}>
+          <Card title="참조 그룹 비교 — 지점 vs Bio Filter" subtitle={<>같은 기준값으로 대면적 파일마다 판정한 비율입니다. 참조 그룹(지점이 아닌 파일)은 지점 통계·지도에 들어가지 않습니다. 참조 그룹에서도 비슷한 비율이 나오는 유형·원소는 필터 배경이나 자동 분석 오검출일 수 있으니, <b>지점 값이 참조보다 뚜렷하게 높은지</b>를 보세요.</>}>
             <ReferenceTable rows={groupRows} />
           </Card>
         </div>
@@ -623,7 +623,7 @@ function ReferenceTable({ rows }: { rows: GroupRow[] }) {
           </tbody>
         </table>
       </div>
-      <p className="text-[12.5px] text-ink-3">굵은 테두리 = 지점 값이 참조 그룹(Free·Bio Filter) 최댓값의 2배 이상이면서 5%p 이상 높은 칸. 비율은 지금 기준값(크기 범위·종횡비·함량 기준)으로 계산합니다. Free Filter·Bio Filter가 무엇을 채취한 시료인지(공시료인지, 공기청정기 필터인지)에 따라 해석이 달라지므로 확인이 필요합니다.</p>
+      <p className="text-[12.5px] text-ink-3">굵은 테두리 = 지점 값이 참조 그룹(Bio Filter) 값의 2배 이상이면서 5%p 이상 높은 칸. 비율은 지금 기준값(크기 범위·종횡비·함량 기준)으로 계산합니다. Bio Filter가 무엇을 채취한 시료인지(공시료인지, 공기청정기 필터인지)에 따라 해석이 달라지므로 확인이 필요합니다.</p>
     </div>
   );
 }

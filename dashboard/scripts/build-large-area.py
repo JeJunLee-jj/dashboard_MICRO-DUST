@@ -14,9 +14,9 @@ import sys
 from datetime import date
 from pathlib import Path
 
-# 파일 이름 표기가 실제 지점과 다른 경우(연구진 확인, 2026-11-09): "E-2_…" 파일은 카페·간편식(E-43)에서 채취한 시료
+# 파일 이름 표기가 실제 지점과 다른 경우(연구진 확인, 2026-11-09): "Free Filter_…" 파일은 카페·간편식(E-43)에서 채취한 시료
 FILE_SITE_OVERRIDE = {
-    "E-2": ("cafe", "카페·간편식 (E-43)"),
+    "Free Filter": ("cafe", "카페·간편식 (E-43)"),
 }
 SITE_BY_PREFIX = [
     (re.compile(r"^D(?![A-Za-z0-9-])"), "gate", "개찰구 (D구역)"),
