@@ -41,7 +41,7 @@ const largePath = join(root, "public", "shared-data", "large-area.json");
 if (existsSync(largePath)) {
   const json = readFileSync(largePath, "utf8");
   JSON.parse(json);
-  const safe = json.replace(/</g, "\\u003c").replace(/ /g, "\\u2028").replace(/ /g, "\\u2029");
+  const safe = json.replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
   html = html.replace("<head>", () => `<head>\n<script>window.__SEMEDS_LARGE__ = ${safe};</script>`);
   console.log(`대면적 분석 데이터 포함: ${(Buffer.byteLength(json) / 1024 / 1024).toFixed(1)} MB`);
 }
