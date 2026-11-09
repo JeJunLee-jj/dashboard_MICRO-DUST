@@ -543,6 +543,7 @@ interface GroupRow {
   id: string;
   label: string;
   file: string;
+  note: string | null;
   isSite: boolean;
   total: number;
   n: number;
@@ -567,7 +568,7 @@ function groupStats(la: LargeAreaSet, cfg: SimConfig, settings: AnalysisSettings
       if (!g.elements.includes(el)) { els[el] = r(0, 0); continue; }
       els[el] = r(js.filter((j) => (j.particle.elements[el]?.wt ?? 0) > 0).length, js.length);
     }
-    return { id: g.id, label: g.label, file: g.file, isSite: !!g.siteId, total: ps.length, n: js.length, nonSphere: r(ns.filter((j) => j.nonSphere).length, ns.length), rules, els };
+    return { id: g.id, label: g.label, file: g.file, note: g.note ?? null, isSite: !!g.siteId, total: ps.length, n: js.length, nonSphere: r(ns.filter((j) => j.nonSphere).length, ns.length), rules, els };
   });
   return [...rows.filter((x) => x.isSite), ...rows.filter((x) => !x.isSite)];
 }
@@ -600,7 +601,7 @@ function ReferenceTable({ rows }: { rows: GroupRow[] }) {
           <tbody>
             {rows.map((row) => (
               <tr key={row.id} className={row.isSite ? "" : "bg-[#f3f1ec]"}>
-                <td className="whitespace-nowrap"><b>{row.label}</b>{row.isSite ? null : <span className="ml-1 text-[11.5px] text-ink-3">참조</span>}<div className="text-[11px] text-ink-3 font-mono break-all max-w-[200px]">{row.file}</div></td>
+                <td className="whitespace-nowrap"><b>{row.label}</b>{row.isSite ? null : <span className="ml-1 text-[11.5px] text-ink-3">참조</span>}<div className="text-[11px] text-ink-3 font-mono break-all max-w-[200px]">{row.file}</div>{row.note && <div className="text-[11px] text-[#6b4b00] max-w-[200px]">{row.note}</div>}</td>
                 <td className="num whitespace-nowrap">{row.n.toLocaleString()}{row.total !== row.n && <div className="text-[11.5px] text-ink-3">전체 {row.total.toLocaleString()}</div>}</td>
                 {cell(row, (x) => x.nonSphere, "ns")}
                 {SOURCE_RULES.map((r) => cell(row, (x) => x.rules[r.id], r.id))}

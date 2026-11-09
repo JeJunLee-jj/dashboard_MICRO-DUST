@@ -10,6 +10,8 @@ export interface LargeAreaGroup {
   id: string;
   tag: string;
   file: string;
+  /** 파일 이름과 실제 지점이 다를 때 설명 */
+  note?: string | null;
   siteId: string | null;
   label: string;
   n: number;

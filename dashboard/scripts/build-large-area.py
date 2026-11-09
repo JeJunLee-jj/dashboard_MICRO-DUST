@@ -14,6 +14,10 @@ import sys
 from datetime import date
 from pathlib import Path
 
+# 파일 이름 표기가 실제 지점과 다른 경우(연구진 확인, 2026-11-09): "E-2_…" 파일은 카페·간편식(E-43)에서 채취한 시료
+FILE_SITE_OVERRIDE = {
+    "E-2": ("cafe", "카페·간편식 (E-43)"),
+}
 SITE_BY_PREFIX = [
     (re.compile(r"^D(?![A-Za-z0-9-])"), "gate", "개찰구 (D구역)"),
     (re.compile(r"^B\s*-?\s*28(?!\d)", re.I), "food", "음식점 (B-28)"),
@@ -55,7 +59,7 @@ def main(folder: Path, out: Path):
     for path in sorted(folder.glob("*.csv")):
         stem = path.stem
         tag = stem.split("_")[0].strip().replace("FIlter", "Filter")
-        site = next(((sid, label) for rx, sid, label in SITE_BY_PREFIX if rx.search(tag)), None)
+        site = FILE_SITE_OVERRIDE.get(tag) or next(((sid, label) for rx, sid, label in SITE_BY_PREFIX if rx.search(tag)), None)
         head, rows = read_rows(path)
         idx = {h: i for i, h in enumerate(head)}
         need = ["DMax", "Aspect"]
@@ -91,6 +95,7 @@ def main(folder: Path, out: Path):
             "id": re.sub(r"[^A-Za-z0-9-]", "", tag.replace(" ", "-")) or stem,
             "tag": tag,
             "file": path.name,
+            "note": f"파일 이름은 {tag}이나 {site[1]} 시료(연구진 확인)" if tag in FILE_SITE_OVERRIDE else None,
             "siteId": site[0] if site else None,
             "label": site[1] if site else tag,
             "n": n,
